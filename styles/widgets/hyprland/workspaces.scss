@@ -17,24 +17,25 @@ $workspace-empty-dot-size: 8px;
   min-width: $workspace-cell-size;
   min-height: $workspace-cell-size;
   padding: 0;
+  border: solid 1px transparent;
   border-radius: 999px;
   transition: background-color 160ms ease-out;
 }
 
 .widget-workspaces-item.has-windows {
-  border: solid 1px theme.$widget-border;
+  border-color: theme.$widget-border;
   background-color: theme.$widget-bg;
 
-  &:hover {
+  &.is-hovered {
     background-color: theme.$widget-bg-active;
   }
 }
 
 .widget-workspaces-item.is-focused {
   background-color: theme.$widget-bg-hover;
-  border: solid 1px theme.$widget-border;
+  border-color: theme.$widget-border;
 
-  &:hover {
+  &.is-hovered {
     background-color: theme.$widget-bg-active;
   }
 }

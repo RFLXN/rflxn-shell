@@ -16,6 +16,9 @@ type WorkspacesWidgetProps = {
   monitorName?: string
 }
 
+const WORKSPACE_CELL_SIZE = 30
+const WORKSPACE_HOVER_CLASS = "is-hovered"
+
 function addPrimaryClick(widget: Gtk.Widget, onClick: () => void) {
   const click = Gtk.GestureClick.new()
 
@@ -29,6 +32,21 @@ function addPrimaryClick(widget: Gtk.Widget, onClick: () => void) {
 
   widget.add_controller(click)
   widget.set_cursor_from_name("pointer")
+}
+
+function addWorkspaceHover(widget: Gtk.Widget) {
+  const motion = Gtk.EventControllerMotion.new()
+
+  motion.connect("notify::contains-pointer", () => {
+    if (motion.containsPointer) {
+      widget.add_css_class(WORKSPACE_HOVER_CLASS)
+      return
+    }
+
+    widget.remove_css_class(WORKSPACE_HOVER_CLASS)
+  })
+
+  widget.add_controller(motion)
 }
 
 function focusWorkspace(id: number) {
@@ -69,9 +87,13 @@ function WorkspaceWindow({ window }: { window: HyprlandWindowSnapshot }) {
       size="css"
     /> as Gtk.Widget)
 
+  icon.set_can_target(false)
+
   return (
     <centerbox
       class={getWindowClassName(window)}
+      widthRequest={WORKSPACE_CELL_SIZE}
+      heightRequest={WORKSPACE_CELL_SIZE}
       valign={Gtk.Align.CENTER}
       centerWidget={icon}
       $={(self) => addPrimaryClick(self, () => focusWindow(window.address))}
@@ -88,15 +110,21 @@ function WorkspaceItem({ workspace }: { workspace: HyprlandWorkspaceSnapshot }) 
         class="widget-workspaces-empty-dot"
         halign={Gtk.Align.CENTER}
         valign={Gtk.Align.CENTER}
+        canTarget={false}
       />
     ) as Gtk.Widget
 
     return (
       <centerbox
         class={getWorkspaceClassName(workspace)}
+        widthRequest={WORKSPACE_CELL_SIZE}
+        heightRequest={WORKSPACE_CELL_SIZE}
         valign={Gtk.Align.CENTER}
         centerWidget={content}
-        $={(self) => addPrimaryClick(self, () => focusWorkspace(workspace.id))}
+        $={(self) => {
+          addWorkspaceHover(self)
+          addPrimaryClick(self, () => focusWorkspace(workspace.id))
+        }}
       />
     )
   }
@@ -104,8 +132,11 @@ function WorkspaceItem({ workspace }: { workspace: HyprlandWorkspaceSnapshot }) 
   return (
     <box
       class={getWorkspaceClassName(workspace)}
+      widthRequest={workspace.windows.length * WORKSPACE_CELL_SIZE}
+      heightRequest={WORKSPACE_CELL_SIZE}
       spacing={0}
       valign={Gtk.Align.CENTER}
+      $={addWorkspaceHover}
     >
       {workspace.windows.map((window) => <WorkspaceWindow window={window} />)}
     </box>
