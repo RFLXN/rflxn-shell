@@ -1,0 +1,10 @@
+@use "./styles/theme.scss" as *;
+@use "./styles/bar.scss";
+@use "./styles/global-menu.scss";
+@use "./styles/shutdown-confirmation-overlay.scss";
+@use "./styles/widgets/index.scss";
+
+.text {
+  color: $text-primary;
+  font-family: "Pretendard";
+}

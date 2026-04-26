@@ -1,0 +1,16 @@
+# Node / package-manager installs
+node_modules/
+
+# Generated GIR TypeScript declarations
+@girs/
+
+# Nix / direnv local state
+.direnv/
+.envrc
+result
+result-*
+
+# Logs and temporary local outputs
+*.log
+*.tmp
+tmp/

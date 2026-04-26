@@ -1,0 +1,409 @@
+@use "../theme.scss" as theme;
+
+.widget-system-controls {
+  min-height: 30px;
+  padding: 0 10px;
+  border-radius: 999px;
+  border: solid 1px transparent;
+  background-color: transparent;
+  transition: background-color 160ms ease-out;
+
+  &:hover,
+  &.is-open {
+    border: solid 1px theme.$widget-border;
+    background-color: theme.$widget-bg-active;
+  }
+}
+
+.widget-system-controls-content {
+  color: theme.$text-secondary;
+}
+
+.widget-system-controls-percentage {
+  color: theme.$text-secondary;
+
+  > .widget-system-controls-percentage-value {
+    color: theme.$text-secondary;
+    font-size: 14px;
+    font-weight: 700;
+  }
+
+  > .widget-system-controls-percentage-progress {
+    min-width: 24px;
+    min-height: 24px;
+    color: theme.$text-secondary;
+  }
+
+  > .widget-system-controls-percentage-progress > .widget-system-controls-percentage-ring {
+    min-width: 24px;
+    min-height: 24px;
+  }
+
+  > .widget-system-controls-percentage-progress > .widget-system-controls-percentage-icon-container {
+    min-width: 24px;
+    min-height: 24px;
+  }
+
+  > .widget-system-controls-percentage-progress
+    > .widget-system-controls-percentage-icon-container
+    > .widget-system-controls-percentage-icon {
+    min-width: 16px;
+    min-height: 16px;
+    -gtk-icon-size: 16px;
+  }
+}
+
+.widget-system-controls-volume.is-boosted {
+  > .widget-system-controls-percentage-progress {
+    color: theme.$warning;
+
+    > .widget-system-controls-percentage-icon-container
+      > .widget-system-controls-percentage-icon {
+      color: theme.$warning;
+    }
+  }
+}
+
+.widget-system-controls-volume.is-muted {
+  > .widget-system-controls-percentage-progress {
+    color: theme.$critical;
+
+    > .widget-system-controls-percentage-icon-container
+      > .widget-system-controls-percentage-icon {
+      color: theme.$critical;
+    }
+  }
+}
+
+.widget-system-controls-icon {
+  min-width: 18px;
+  min-height: 18px;
+  -gtk-icon-size: 18px;
+}
+
+.widget-system-controls-network.is-offline {
+  color: theme.$critical;
+}
+
+.widget-system-controls-network.is-no-internet {
+  color: theme.$warning;
+}
+
+.widget-system-controls-menu-window {
+  background-color: transparent;
+}
+
+.widget-system-controls-menu-slot {
+  background-color: transparent;
+}
+
+.widget-system-controls-menu-revealer {
+  background-color: transparent;
+}
+
+.widget-system-controls-menu-content {
+  padding: 5px;
+  border-radius: 23px;
+  border: solid 1px theme.$widget-border;
+  background-color: theme.$widget-bg;
+
+  > .widget-system-controls-menu-scroll {
+    background-color: transparent;
+  }
+
+  > .widget-system-controls-menu-scroll > viewport {
+    background-color: transparent;
+  }
+
+  scrollbar {
+    min-width: 0;
+    min-height: 0;
+    margin: 0;
+    padding: 0;
+    border: none;
+    background-color: transparent;
+    box-shadow: none;
+
+    slider {
+      min-width: 4px;
+      min-height: 4px;
+      margin: 0;
+      border: none;
+      border-radius: 999px;
+      background-color: theme.$accent-soft;
+      box-shadow: none;
+      transition: background-color 160ms ease-out;
+
+      &:hover,
+      &:active {
+        background-color: theme.$accent;
+      }
+    }
+  }
+
+  .widget-system-controls-menu-scroll-content {
+    background-color: transparent;
+  }
+}
+
+.widget-system-controls-menu-footer {
+  padding: 7px 10px 9px;
+  border-top: solid 1px theme.$widget-border;
+  background-color: transparent;
+
+  > .widget-system-controls-menu-footer-button {
+    min-height: 32px;
+    padding: 0 10px;
+    border: none;
+    border-radius: 999px;
+    background-color: transparent;
+    background-image: none;
+    box-shadow: none;
+    color: theme.$text-secondary;
+    text-shadow: none;
+    transition:
+      background-color 160ms ease-out,
+      color 160ms ease-out;
+
+    &:hover,
+    &:focus {
+      background-color: theme.$widget-bg-hover;
+      color: theme.$text-primary;
+    }
+
+    &.is-restart:hover,
+    &.is-restart:focus {
+      color: theme.$warning;
+    }
+
+    &.is-power:hover,
+    &.is-power:focus {
+      color: theme.$critical;
+    }
+
+    > .widget-system-controls-menu-footer-button-content {
+      background-color: transparent;
+
+      > .widget-system-controls-menu-footer-button-icon {
+        min-width: 16px;
+        min-height: 16px;
+      }
+
+      > .widget-system-controls-menu-footer-button-label {
+        font-size: 0.82rem;
+        font-weight: 800;
+      }
+    }
+  }
+}
+
+.widget-system-controls-menu-scrim {
+  background-color: transparent;
+}
+
+.widget-system-controls-volume-menu {
+  padding: 8px 10px;
+  background-color: transparent;
+
+  > .widget-system-controls-volume-menu-section {
+    background-color: transparent;
+
+    > .widget-system-controls-volume-menu-section-title {
+      color: theme.$text-muted;
+      font-size: 0.82rem;
+      font-weight: 800;
+    }
+
+    > .widget-system-controls-volume-menu-empty {
+      padding: 6px 10px;
+      color: theme.$text-muted;
+      font-size: 0.88rem;
+    }
+
+    > .widget-system-controls-volume-menu-device {
+      padding: 6px 10px;
+      border-radius: 16px;
+      background-color: theme.$widget-bg;
+
+      > .widget-system-controls-volume-menu-device-header {
+        background-color: transparent;
+
+        > .widget-system-controls-volume-menu-default {
+          min-width: 18px;
+          min-height: 18px;
+          padding: 0;
+          border: none;
+          background-color: transparent;
+          background-image: none;
+          box-shadow: none;
+          text-shadow: none;
+          color: theme.$text-secondary;
+
+          &:hover,
+          &:active,
+          &:focus {
+            border: none;
+            background-color: transparent;
+            background-image: none;
+            box-shadow: none;
+            text-shadow: none;
+          }
+
+          &:hover > .widget-system-controls-volume-menu-default-container
+            > .widget-system-controls-volume-menu-default-indicator,
+          &:focus > .widget-system-controls-volume-menu-default-container
+            > .widget-system-controls-volume-menu-default-indicator {
+            border-color: theme.$accent;
+            background-color: theme.$widget-bg-hover;
+          }
+
+          &.is-default > .widget-system-controls-volume-menu-default-container
+            > .widget-system-controls-volume-menu-default-indicator {
+            border-color: theme.$accent;
+            background-color: theme.$accent;
+            box-shadow: inset 0 0 0 2px theme.$widget-bg;
+          }
+
+          &.is-default:hover > .widget-system-controls-volume-menu-default-container
+            > .widget-system-controls-volume-menu-default-indicator,
+          &.is-default:focus > .widget-system-controls-volume-menu-default-container
+            > .widget-system-controls-volume-menu-default-indicator {
+            border-color: theme.$accent;
+            background-color: theme.$accent;
+            box-shadow: inset 0 0 0 2px theme.$widget-bg-hover;
+          }
+
+          > .widget-system-controls-volume-menu-default-container {
+            min-width: 18px;
+            min-height: 18px;
+            border-radius: 999px;
+            background-color: transparent;
+          }
+
+          > .widget-system-controls-volume-menu-default-container
+            > .widget-system-controls-volume-menu-default-indicator {
+            min-width: 10px;
+            min-height: 10px;
+            margin: 0;
+            border: solid 2px theme.$widget-border;
+            border-radius: 999px;
+            background-color: theme.$widget-bg;
+            background-image: none;
+            box-shadow: none;
+            color: theme.$accent;
+            transition:
+              background-color 160ms ease-out,
+              border-color 160ms ease-out,
+              box-shadow 160ms ease-out;
+          }
+        }
+
+        > .widget-system-controls-volume-menu-device-name {
+          color: theme.$text-primary;
+          font-size: 0.92rem;
+          font-weight: 700;
+        }
+      }
+
+      > .widget-system-controls-volume-menu-device-control {
+        background-color: transparent;
+
+        > .widget-system-controls-volume-menu-mute {
+          min-width: 28px;
+          min-height: 28px;
+          padding: 0;
+          border: none;
+          border-radius: 999px;
+          background-color: transparent;
+          background-image: none;
+          box-shadow: none;
+          text-shadow: none;
+          color: theme.$text-secondary;
+
+          &:hover > .widget-system-controls-volume-menu-mute-icon-container {
+            background-color: theme.$widget-bg-hover;
+          }
+
+          &.is-muted {
+            color: theme.$critical;
+          }
+
+          > .widget-system-controls-volume-menu-mute-icon-container {
+            min-width: 28px;
+            min-height: 28px;
+            border-radius: 999px;
+            background-color: transparent;
+
+            > .widget-system-controls-volume-menu-mute-icon {
+              min-width: 18px;
+              min-height: 18px;
+            }
+          }
+        }
+
+        > .widget-system-controls-volume-menu-slider {
+          min-height: 18px;
+          padding: 0;
+          background-color: transparent;
+          background-image: none;
+          color: theme.$accent;
+
+          trough {
+            min-width: 80px;
+            min-height: 6px;
+            margin: 0;
+            border: none;
+            border-radius: 999px;
+            background-color: theme.$widget-bg-hover;
+            background-image: none;
+            box-shadow: none;
+            transition: background-color 160ms ease-out;
+          }
+
+          highlight {
+            min-height: 6px;
+            margin: 0;
+            border-radius: 999px;
+            background-color: theme.$accent-soft;
+            background-image: none;
+            box-shadow: none;
+            transition: background-color 160ms ease-out;
+          }
+
+          slider {
+            min-width: 8px;
+            min-height: 8px;
+            margin: 0;
+            border: none;
+            border-radius: 999px;
+            background-color: theme.$accent;
+            background-image: none;
+            box-shadow: none;
+            transition: background-color 160ms ease-out;
+          }
+
+          &:hover,
+          &:focus {
+            trough {
+              background-color: theme.$widget-bg-hover;
+            }
+
+            highlight {
+              background-color: theme.$accent;
+            }
+
+            slider {
+              background-color: theme.$accent;
+            }
+          }
+        }
+
+        > .widget-system-controls-volume-menu-percent {
+          color: theme.$text-secondary;
+          font-size: 0.86rem;
+          font-weight: 800;
+        }
+      }
+    }
+  }
+}

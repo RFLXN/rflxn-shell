@@ -1,0 +1,67 @@
+@use "sass:math";
+@use "../../theme.scss" as theme;
+
+$workspace-cell-size: 30px;
+$workspace-gap: 6px;
+$workspace-icon-size: 18px;
+$workspace-empty-dot-size: 8px;
+
+.widget-workspaces {
+  > .widget-workspaces-item {
+    margin-left: math.div($workspace-gap, 2);
+    margin-right: math.div($workspace-gap, 2);
+  }
+}
+
+.widget-workspaces-item {
+  min-width: $workspace-cell-size;
+  min-height: $workspace-cell-size;
+  padding: 0;
+  border-radius: 999px;
+  transition: background-color 160ms ease-out;
+}
+
+.widget-workspaces-item.has-windows {
+  border: solid 1px theme.$widget-border;
+  background-color: theme.$widget-bg;
+
+  &:hover {
+    background-color: theme.$widget-bg-active;
+  }
+}
+
+.widget-workspaces-item.is-focused {
+  background-color: theme.$widget-bg-hover;
+  border: solid 1px theme.$widget-border;
+
+  &:hover {
+    background-color: theme.$widget-bg-active;
+  }
+}
+
+.widget-workspaces-item.is-empty:not(.is-focused) {
+  background-color: transparent;
+}
+
+.widget-workspaces-empty-dot {
+  min-width: $workspace-empty-dot-size;
+  min-height: $workspace-empty-dot-size;
+  border-radius: 999px;
+  background-color: theme.$text-muted;
+}
+
+.widget-workspaces-window {
+  min-width: $workspace-cell-size;
+  min-height: $workspace-cell-size;
+}
+
+.widget-workspaces-window.is-focused {
+  color: theme.$text-primary;
+}
+
+.widget-workspaces-window-icon {
+  min-width: $workspace-icon-size;
+  min-height: $workspace-icon-size;
+  -gtk-icon-size: $workspace-icon-size;
+  color: theme.$text-secondary;
+}
