@@ -104,7 +104,23 @@ function getExecutableName(executable: string | null | undefined) {
   return parts[parts.length - 1] ?? command
 }
 
-function matchesClientApp(
+function getSteamAppIconName(clientClassNames: Set<string>) {
+  for (const className of clientClassNames) {
+    const match = className.match(/^steam_app_(\d+)$/)
+
+    if (match?.[1]) {
+      return `steam_icon_${match[1]}`
+    }
+  }
+
+  return null
+}
+
+function isSteamGameLauncher(app: AstalApps.Application) {
+  return normalize(app.get_executable()).includes("steam://rungameid/")
+}
+
+function matchesClientAppIdentity(
   app: AstalApps.Application,
   clientClassNames: Set<string>,
 ) {
@@ -112,10 +128,22 @@ function matchesClientApp(
     normalize(app.get_wm_class()),
     stripDesktopExtension(app.get_entry()),
     normalize(app.get_name()),
-    getExecutableName(app.get_executable()),
   ].filter(Boolean)
 
   return candidates.some((candidate) => clientClassNames.has(candidate))
+}
+
+function matchesClientAppExecutable(
+  app: AstalApps.Application,
+  clientClassNames: Set<string>,
+) {
+  if (isSteamGameLauncher(app)) {
+    return false
+  }
+
+  const executableName = getExecutableName(app.get_executable())
+
+  return Boolean(executableName) && clientClassNames.has(executableName)
 }
 
 function getClientIcon(client: AstalHyprland.Client) {
@@ -132,9 +160,20 @@ function getClientIcon(client: AstalHyprland.Client) {
     return null
   }
 
-  const app = getApps()
-    .get_list()
-    .find((candidate) => matchesClientApp(candidate, clientClassNames))
+  const steamAppIconName = getSteamAppIconName(clientClassNames)
+
+  if (steamAppIconName) {
+    return steamAppIconName
+  }
+
+  const appList = getApps().get_list()
+  const app =
+    appList.find((candidate) =>
+      matchesClientAppIdentity(candidate, clientClassNames),
+    ) ??
+    appList.find((candidate) =>
+      matchesClientAppExecutable(candidate, clientClassNames),
+    )
 
   return app?.get_icon_name() || null
 }
