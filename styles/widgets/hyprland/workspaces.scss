@@ -45,7 +45,7 @@ $workspace-empty-dot-size: 8px;
 
   &.is-hovered {
     border-color: theme.$widget-border;
-    background-color: theme.$widget-bg;
+    background-color: theme.$widget-bg-active;
   }
 }
 
