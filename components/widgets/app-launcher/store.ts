@@ -3,7 +3,7 @@ import AstalApps from "gi://AstalApps?version=0.1"
 import GLib from "gi://GLib?version=2.0"
 import { closeAppLauncher } from "../../global-store"
 
-const MAX_RESULTS = 16
+const MAX_SEARCH_RESULTS = 16
 const DESKTOP_ENTRY_EXTENSION = ".desktop"
 const FALLBACK_PROGRAM_DIRS = ["/run/current-system/sw/bin", "/usr/bin"]
 
@@ -119,14 +119,13 @@ function queryApplications(query: string) {
   const normalizedQuery = query.trim()
 
   if (normalizedQuery) {
-    return apps.fuzzy_query(normalizedQuery).slice(0, MAX_RESULTS)
+    return apps.fuzzy_query(normalizedQuery).slice(0, MAX_SEARCH_RESULTS)
   }
 
   return apps
     .get_list()
     .slice()
     .sort(compareDefaultResults)
-    .slice(0, MAX_RESULTS)
 }
 
 function clampActiveIndex(index: number, results = appLauncherResults.peek()) {
