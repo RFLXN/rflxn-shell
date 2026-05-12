@@ -1,14 +1,17 @@
+import type { Accessor } from "ags"
 import PercentageWidget from "../PercentageWidget"
-import { hasBattery } from "./store"
+import { batteryClassName, batteryPercentage, hasBattery } from "./store"
 
 type BatteryControlProps = {
-  value?: number
+  value?: number | Accessor<number>
 }
 
-export default function BatteryControl({ value = 82 }: BatteryControlProps) {
+export default function BatteryControl({
+  value = batteryPercentage,
+}: BatteryControlProps) {
   return (
     <PercentageWidget
-      class="widget-system-controls-battery"
+      class={batteryClassName}
       iconName="battery_full"
       iconSize={15}
       value={value}

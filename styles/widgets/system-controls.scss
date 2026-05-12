@@ -75,6 +75,21 @@
   }
 }
 
+.widget-system-controls-battery.is-charging {
+  > .widget-system-controls-percentage-value {
+    color: theme.$success;
+  }
+
+  > .widget-system-controls-percentage-progress {
+    color: theme.$success;
+
+    > .widget-system-controls-percentage-icon-container
+      > .widget-system-controls-percentage-icon {
+      color: theme.$success;
+    }
+  }
+}
+
 .widget-system-controls-icon {
   min-width: 18px;
   min-height: 18px;
