@@ -6,6 +6,9 @@ import {
   type HyprlandWindowSnapshot,
   type HyprlandWorkspaceSnapshot,
 } from "../../../utils/hyprland/workspaces"
+import {
+  fetchXWaylandUrgentWindowAddresses,
+} from "../../../utils/xwayland-urgency"
 
 type HyprlandStore = {
   workspaces: Accessor<HyprlandWorkspaceSnapshot[]>
@@ -41,7 +44,12 @@ const CLIENT_REFRESH_SIGNALS = [
   "notify::class",
   "notify::title",
   "notify::initial-class",
+  "notify::initial-title",
+  "notify::pid",
+  "notify::xwayland",
 ] as const
+
+const XWAYLAND_URGENCY_POLL_INTERVAL_MS = 1000
 
 function sameWorkspaceSnapshots(
   prev: HyprlandWorkspaceSnapshot[],
@@ -58,6 +66,24 @@ function getFocusedWindowFromWorkspaces(workspaceItems: HyprlandWorkspaceSnapsho
   )
 }
 
+function sameStringSet(left: ReadonlySet<string>, right: ReadonlySet<string>) {
+  if (left.size !== right.size) return false
+
+  for (const value of left) {
+    if (!right.has(value)) return false
+  }
+
+  return true
+}
+
+function replaceStringSet(target: Set<string>, source: ReadonlySet<string>) {
+  target.clear()
+
+  for (const value of source) {
+    target.add(value)
+  }
+}
+
 function createHyprlandStore(): HyprlandStore {
   const hyprland = AstalHyprland.get_default()
   const [workspaces, setWorkspaces] = createState<
@@ -69,6 +95,8 @@ function createHyprlandStore(): HyprlandStore {
     hyprland.connect(signal, () => queueRefetch()),
   )
   const urgentWindowAddresses = new Set<string>()
+  const xwaylandUrgentWindowAddresses = new Set<string>()
+  const acknowledgedXWaylandUrgentWindowAddresses = new Set<string>()
   const urgentSignalId = hyprland.connect("urgent", (_hyprland, client) => {
     const address = client.get_address()
 
@@ -83,6 +111,7 @@ function createHyprlandStore(): HyprlandStore {
     { client: AstalHyprland.Client; ids: number[] }
   >()
   let idleId = 0
+  let xwaylandUrgencyPollId = 0
   let fetching = false
   let pendingRefetch = false
   let disposed = false
@@ -130,6 +159,12 @@ function createHyprlandStore(): HyprlandStore {
 
         if (workspace.status === "focused") {
           urgentWindowAddresses.delete(window.address)
+
+          if (xwaylandUrgentWindowAddresses.has(window.address)) {
+            acknowledgedXWaylandUrgentWindowAddresses.add(window.address)
+          }
+
+          xwaylandUrgentWindowAddresses.delete(window.address)
         }
       }
     }
@@ -139,6 +174,61 @@ function createHyprlandStore(): HyprlandStore {
         urgentWindowAddresses.delete(address)
       }
     }
+
+    for (const address of xwaylandUrgentWindowAddresses) {
+      if (!activeWindowAddresses.has(address)) {
+        xwaylandUrgentWindowAddresses.delete(address)
+      }
+    }
+
+    for (const address of acknowledgedXWaylandUrgentWindowAddresses) {
+      if (!activeWindowAddresses.has(address)) {
+        acknowledgedXWaylandUrgentWindowAddresses.delete(address)
+      }
+    }
+  }
+
+  function getUrgentWindowAddresses() {
+    return new Set([
+      ...urgentWindowAddresses,
+      ...xwaylandUrgentWindowAddresses,
+    ])
+  }
+
+  function syncXWaylandUrgentWindowAddresses() {
+    const next = fetchXWaylandUrgentWindowAddresses(hyprland.get_clients())
+
+    for (const address of acknowledgedXWaylandUrgentWindowAddresses) {
+      if (next.has(address)) {
+        next.delete(address)
+      } else {
+        acknowledgedXWaylandUrgentWindowAddresses.delete(address)
+      }
+    }
+
+    if (sameStringSet(xwaylandUrgentWindowAddresses, next)) {
+      return false
+    }
+
+    replaceStringSet(xwaylandUrgentWindowAddresses, next)
+    return true
+  }
+
+  function pollXWaylandUrgency() {
+    if (disposed) {
+      xwaylandUrgencyPollId = 0
+      return GLib.SOURCE_REMOVE
+    }
+
+    try {
+      if (syncXWaylandUrgentWindowAddresses()) {
+        queueRefetch()
+      }
+    } catch (error) {
+      console.error("Failed to poll XWayland urgent window state", error)
+    }
+
+    return GLib.SOURCE_CONTINUE
   }
 
   async function refetchNow() {
@@ -155,8 +245,11 @@ function createHyprlandStore(): HyprlandStore {
       do {
         pendingRefetch = false
         syncClientSignals()
+        syncXWaylandUrgentWindowAddresses()
 
-        const next = await fetchHyprlandWorkspaces({ urgentWindowAddresses })
+        const next = await fetchHyprlandWorkspaces({
+          urgentWindowAddresses: getUrgentWindowAddresses(),
+        })
 
         if (disposed) {
           return
@@ -193,6 +286,11 @@ function createHyprlandStore(): HyprlandStore {
       idleId = 0
     }
 
+    if (xwaylandUrgencyPollId !== 0) {
+      GLib.source_remove(xwaylandUrgencyPollId)
+      xwaylandUrgencyPollId = 0
+    }
+
     for (const id of hyprlandSignalIds) {
       hyprland.disconnect(id)
     }
@@ -209,6 +307,11 @@ function createHyprlandStore(): HyprlandStore {
   }
 
   queueRefetch()
+  xwaylandUrgencyPollId = GLib.timeout_add(
+    GLib.PRIORITY_DEFAULT,
+    XWAYLAND_URGENCY_POLL_INTERVAL_MS,
+    pollXWaylandUrgency,
+  )
 
   return {
     workspaces,

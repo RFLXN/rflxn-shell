@@ -168,6 +168,7 @@ It provides:
 
 - Workspace snapshots
 - Focused, active, occupied, and empty workspace states
+- Urgent workspace state from Hyprland events and XWayland `WM_HINTS`
 - Per-workspace window icon snapshots
 - Window focus by address
 - Workspace focus by id
@@ -234,7 +235,8 @@ The Home Manager module is enabled with
 same runtime package set used by the devShell, packages this source tree into
 the Nix store, and symlinks `~/.config/ags` to the packaged source tree.
 The default runtime package set includes `papirus-icon-theme` for the
-`Papirus-Dark` icon theme used by application icons.
+`Papirus-Dark` icon theme used by application icons and `xprop` for reading
+XWayland urgency hints.
 
 The NixOS helper module adds the Home Manager module to
 `home-manager.sharedModules`, so system configs can set

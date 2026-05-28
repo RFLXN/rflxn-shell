@@ -58,8 +58,8 @@ When enabled, the module:
 
 - Installs the AGS package with the same Astal/Gtk runtime package set as the
   devShell.
-- Installs those runtime packages, including `papirus-icon-theme`, into
-  `home.packages`.
+- Installs those runtime packages, including `papirus-icon-theme` and `xprop`,
+  into `home.packages`.
 - Builds this shell source tree into the Nix store.
 - Symlinks `~/.config/ags` to the packaged source tree.
 

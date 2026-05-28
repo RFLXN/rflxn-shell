@@ -47,6 +47,7 @@
         pkgs.gtk4
         pkgs.papirus-icon-theme
         pkgs.upower
+        pkgs.xorg.xprop
       ];
 
     forEachSystem = f:
