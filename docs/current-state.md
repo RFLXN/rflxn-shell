@@ -190,9 +190,13 @@ The right-side drawer currently contains:
 
 - Output audio device list
 - Input audio device list
+- Default output audio status header
+- Configurable volume control program launcher
 - Per-device volume sliders
 - Per-device mute toggles
 - Per-device default selection
+- Bluetooth power state and connected device status
+- Configurable Bluetooth control program launcher
 - Footer actions for logout, restart, and power off
 
 The footer actions open the shutdown confirmation overlay before executing the
@@ -245,6 +249,11 @@ The NixOS helper module adds the Home Manager module to
 `programs.ags-shell.layout` can override the root `layout.json` value from Nix.
 The generated layout JSON is placed at the package root before the config
 symlink is created.
+
+`programs.ags-shell.systemControlMenu.volume.program` and
+`programs.ags-shell.systemControlMenu.bluetooth.program` can configure external
+programs launched from the system controls menu header buttons. The generated
+runtime config is written to `system-control-menu.json`.
 
 ## Known Gaps
 

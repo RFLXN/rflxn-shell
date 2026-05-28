@@ -2,6 +2,16 @@
   lib,
   stdenvNoCC,
   layoutJson ? ../layout.json,
+  systemControlMenuJson ? builtins.toFile "system-control-menu.json" ''
+    {
+      "volume": {
+        "program": null
+      },
+      "bluetooth": {
+        "program": null
+      }
+    }
+  '',
 }:
 
 let
@@ -15,6 +25,7 @@ let
     "layout.tsx"
     "package.json"
     "style.scss"
+    "system-control-menu.json"
     "styles"
     "tsconfig.json"
     "utils"
@@ -63,6 +74,7 @@ stdenvNoCC.mkDerivation {
       utils \
       "$out/share/ags/"
     cp ${layoutJson} "$out/share/ags/layout.json"
+    cp ${systemControlMenuJson} "$out/share/ags/system-control-menu.json"
 
     runHook postInstall
   '';

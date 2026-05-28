@@ -15,13 +15,33 @@ let
 
   cfg = config.programs.ags-shell;
   layoutFormat = pkgs.formats.json {};
+  systemControlMenuFormat = pkgs.formats.json {};
   defaultRuntimePackages = mkRuntimePackages pkgs.system pkgs;
   defaultAgsPackage = ags.packages.${pkgs.system}.default.override {
     extraPackages = cfg.runtimePackages;
   };
   layoutJson = layoutFormat.generate "ags-shell-layout.json" cfg.layout;
+  programType = types.nullOr (types.oneOf [
+    types.package
+    types.str
+    types.path
+  ]);
+  programToCommand = program:
+    if program == null
+    then null
+    else if lib.isDerivation program
+    then lib.getExe program
+    else toString program;
+  systemControlMenuJson = systemControlMenuFormat.generate "ags-shell-system-control-menu.json" {
+    volume = {
+      program = programToCommand cfg.systemControlMenu.volume.program;
+    };
+    bluetooth = {
+      program = programToCommand cfg.systemControlMenu.bluetooth.program;
+    };
+  };
   generatedPackage = pkgs.callPackage ./package.nix {
-    inherit layoutJson;
+    inherit layoutJson systemControlMenuJson;
   };
   package = if cfg.package == null then generatedPackage else cfg.package;
 in
@@ -53,12 +73,37 @@ in
       '';
     };
 
+    systemControlMenu = {
+      volume.program = mkOption {
+        type = programType;
+        default = null;
+        example = literalExpression "pkgs.pwvucontrol";
+        description = ''
+          Program launched by the volume header button in the system controls
+          menu. Package values are converted to their main executable with
+          lib.getExe; string values are used as command lines.
+        '';
+      };
+
+      bluetooth.program = mkOption {
+        type = programType;
+        default = null;
+        example = literalExpression "pkgs.blueman";
+        description = ''
+          Program launched by the Bluetooth header button in the system controls
+          menu. Package values are converted to their main executable with
+          lib.getExe; string values are used as command lines.
+        '';
+      };
+    };
+
     package = mkOption {
       type = types.nullOr types.package;
       default = null;
       description = ''
         Prebuilt shell source package to link to ~/.config/ags. When null, the
-        module builds this flake's source package with programs.ags-shell.layout.
+        module builds this flake's source package with programs.ags-shell.layout
+        and programs.ags-shell.systemControlMenu.
       '';
     };
 

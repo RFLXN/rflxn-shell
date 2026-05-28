@@ -17,6 +17,7 @@ import {
   isSystemControlsMenuRevealed,
   isSystemControlsMenuVisible,
 } from "./store"
+import BluetoothMenu from "./bluetooth/menu"
 import VolumeMenu from "./volume/menu"
 
 type SystemControlsMenuProps = {
@@ -131,6 +132,7 @@ export default function SystemControlsMenu({
       vexpand
     >
       <VolumeMenu />
+      <BluetoothMenu />
     </box>
   ) as Gtk.Widget
   const scrollArea = (

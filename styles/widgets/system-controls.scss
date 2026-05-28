@@ -220,6 +220,68 @@
   padding: 8px 10px;
   background-color: transparent;
 
+  > .widget-system-controls-volume-menu-status {
+    padding: 8px 10px;
+    border-radius: 16px;
+    background-color: theme.$widget-bg;
+
+    > .widget-system-controls-volume-menu-status-icon-container {
+      min-width: 34px;
+      min-height: 34px;
+      padding: 0;
+      border: none;
+      border-radius: 999px;
+      background-color: theme.$accent-soft;
+      background-image: none;
+      box-shadow: none;
+      color: theme.$accent;
+      text-shadow: none;
+      transition:
+        background-color 160ms ease-out,
+        color 160ms ease-out;
+
+      &:hover,
+      &:focus {
+        border: none;
+        background-color: theme.$accent;
+        background-image: none;
+        box-shadow: none;
+        color: theme.$text-on-accent;
+        text-shadow: none;
+      }
+
+      &:active {
+        border: none;
+        background-color: theme.$accent-strong;
+        background-image: none;
+        box-shadow: none;
+        color: theme.$text-on-accent;
+        text-shadow: none;
+      }
+
+      .widget-system-controls-volume-menu-status-icon {
+        min-width: 20px;
+        min-height: 20px;
+      }
+    }
+
+    > .widget-system-controls-volume-menu-status-copy {
+      background-color: transparent;
+
+      > .widget-system-controls-volume-menu-status-title {
+        color: theme.$text-primary;
+        font-size: 0.95rem;
+        font-weight: 800;
+      }
+
+      > .widget-system-controls-volume-menu-status-description {
+        color: theme.$text-muted;
+        font-size: 0.84rem;
+        font-weight: 600;
+      }
+    }
+  }
+
   > .widget-system-controls-volume-menu-section {
     background-color: transparent;
 
@@ -417,6 +479,134 @@
           color: theme.$text-secondary;
           font-size: 0.86rem;
           font-weight: 800;
+        }
+      }
+    }
+  }
+}
+
+.widget-system-controls-bluetooth-menu {
+  padding: 8px 10px 10px;
+  border-top: solid 1px theme.$widget-border;
+  background-color: transparent;
+
+  > .widget-system-controls-bluetooth-menu-status {
+    padding: 8px 10px;
+    border-radius: 16px;
+    background-color: theme.$widget-bg;
+
+    > .widget-system-controls-bluetooth-menu-status-icon-container {
+      min-width: 34px;
+      min-height: 34px;
+      padding: 0;
+      border: none;
+      border-radius: 999px;
+      background-color: theme.$accent-soft;
+      background-image: none;
+      box-shadow: none;
+      color: theme.$accent;
+      text-shadow: none;
+      transition:
+        background-color 160ms ease-out,
+        color 160ms ease-out;
+
+      &:hover,
+      &:focus {
+        border: none;
+        background-color: theme.$accent;
+        background-image: none;
+        box-shadow: none;
+        color: theme.$text-on-accent;
+        text-shadow: none;
+      }
+
+      &:active {
+        border: none;
+        background-color: theme.$accent-strong;
+        background-image: none;
+        box-shadow: none;
+        color: theme.$text-on-accent;
+        text-shadow: none;
+      }
+
+      .widget-system-controls-bluetooth-menu-status-icon {
+        min-width: 20px;
+        min-height: 20px;
+      }
+    }
+
+    > .widget-system-controls-bluetooth-menu-status-copy {
+      background-color: transparent;
+
+      > .widget-system-controls-bluetooth-menu-status-title {
+        color: theme.$text-primary;
+        font-size: 0.95rem;
+        font-weight: 800;
+      }
+
+      > .widget-system-controls-bluetooth-menu-status-description {
+        color: theme.$text-muted;
+        font-size: 0.84rem;
+        font-weight: 600;
+      }
+    }
+  }
+
+  > .widget-system-controls-bluetooth-menu-section {
+    background-color: transparent;
+
+    > .widget-system-controls-bluetooth-menu-section-title {
+      color: theme.$text-muted;
+      font-size: 0.82rem;
+      font-weight: 800;
+    }
+
+    > .widget-system-controls-bluetooth-menu-empty {
+      padding: 6px 10px;
+      color: theme.$text-muted;
+      font-size: 0.88rem;
+    }
+
+    > .widget-system-controls-bluetooth-menu-device {
+      padding: 7px 10px;
+      border-radius: 16px;
+      background-color: theme.$widget-bg;
+
+      > .widget-system-controls-bluetooth-menu-device-header {
+        background-color: transparent;
+
+        > .widget-system-controls-bluetooth-menu-device-state {
+          min-width: 10px;
+          min-height: 10px;
+          border-radius: 999px;
+          background-color: theme.$success;
+
+          &.is-connecting {
+            background-color: theme.$warning;
+          }
+        }
+
+        > .widget-system-controls-bluetooth-menu-device-name {
+          color: theme.$text-primary;
+          font-size: 0.92rem;
+          font-weight: 700;
+        }
+      }
+
+      > .widget-system-controls-bluetooth-menu-device-tags {
+        background-color: transparent;
+
+        > .widget-system-controls-bluetooth-menu-device-tag {
+          padding: 2px 7px;
+          border-radius: 999px;
+          background-color: theme.$widget-bg-hover;
+          color: theme.$text-secondary;
+          font-size: 0.76rem;
+          font-weight: 800;
+
+          &.is-blocked {
+            color: theme.$critical;
+          }
         }
       }
     }

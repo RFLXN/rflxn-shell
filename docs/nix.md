@@ -90,3 +90,30 @@ programs.ags-shell = {
 
 The configured value is rendered as `layout.json` inside the packaged AGS source
 tree, so the runtime still reads one root-level JSON file.
+
+## System Controls Menu Programs
+
+The system controls menu can launch external control panels from its header
+buttons. Configure them under `programs.ags-shell.systemControlMenu`:
+
+```nix
+programs.ags-shell = {
+  enable = true;
+
+  systemControlMenu = {
+    volume.program = pkgs.pwvucontrol;
+    bluetooth.program = pkgs.blueman;
+  };
+};
+```
+
+Package values are converted to their main executable with `lib.getExe`.
+String values are also accepted when a custom command line is needed:
+
+```nix
+programs.ags-shell.systemControlMenu.bluetooth.program =
+  "${pkgs.blueman}/bin/blueman-manager";
+```
+
+The configured value is rendered as `system-control-menu.json` inside the
+packaged AGS source tree.

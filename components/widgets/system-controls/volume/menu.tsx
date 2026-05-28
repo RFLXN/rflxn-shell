@@ -1,6 +1,7 @@
 import { onCleanup } from "ags"
 import { Astal, Gtk } from "ags/gtk4"
 import Icon from "../../../icon"
+import { launchSystemControlMenuProgram } from "../menu-config"
 import {
   setVolumeMenuDeviceDefault,
   setVolumeMenuDeviceMuted,
@@ -8,6 +9,7 @@ import {
   volumeMenuState,
   type VolumeMenuDevice,
   type VolumeMenuDeviceKind,
+  type VolumeMenuState,
 } from "./menu-store"
 
 type VolumeMenuSectionConfig = {
@@ -29,6 +31,91 @@ function clearBox(box: Gtk.Box) {
 
 function getDeviceLabel(device: VolumeMenuDevice) {
   return device.description || device.name || `Device ${device.id}`
+}
+
+function getDefaultOutputDevice(state: VolumeMenuState) {
+  return state.outputDevices.find((device) => device.isDefault)
+    || state.outputDevices[0]
+    || null
+}
+
+function getVolumeStatusDescription(device: VolumeMenuDevice | null) {
+  if (!device) {
+    return "No output devices"
+  }
+
+  if (device.muted) {
+    return `${getDeviceLabel(device)} - muted`
+  }
+
+  return `${getDeviceLabel(device)} - ${device.volumePercent}%`
+}
+
+function getVolumeStatusIconName(device: VolumeMenuDevice | null) {
+  if (!device) return "volume_off"
+  if (device.muted) return "volume_mute"
+  if (device.volumePercent <= 0) return "volume_off"
+  if (device.volumePercent >= 50) return "volume_up"
+
+  return "volume_down"
+}
+
+function VolumeStatus({ state }: { state: VolumeMenuState }) {
+  const defaultOutput = getDefaultOutputDevice(state)
+
+  return (
+    <box
+      class="widget-system-controls-volume-menu-status"
+      orientation={Gtk.Orientation.HORIZONTAL}
+      spacing={10}
+      hexpand
+    >
+      <button
+        class="widget-system-controls-volume-menu-status-icon-container"
+        widthRequest={34}
+        heightRequest={34}
+        halign={Gtk.Align.CENTER}
+        valign={Gtk.Align.CENTER}
+        hasFrame={false}
+        focusOnClick={false}
+        child={(
+          <centerbox
+            widthRequest={34}
+            heightRequest={34}
+            centerWidget={(
+              <Icon
+                name={getVolumeStatusIconName(defaultOutput)}
+                class="widget-system-controls-volume-menu-status-icon"
+                size={20}
+              />
+            ) as Gtk.Widget}
+          />
+        ) as Gtk.Widget}
+        $={(self) => {
+          self.connect("clicked", () => {
+            launchSystemControlMenuProgram("volume")
+          })
+        }}
+      />
+      <box
+        class="widget-system-controls-volume-menu-status-copy"
+        orientation={Gtk.Orientation.VERTICAL}
+        hexpand
+        valign={Gtk.Align.CENTER}
+      >
+        <label
+          class="widget-system-controls-volume-menu-status-title text"
+          label="Volume"
+          xalign={0}
+        />
+        <label
+          class="widget-system-controls-volume-menu-status-description text"
+          label={getVolumeStatusDescription(defaultOutput)}
+          xalign={0}
+        />
+      </box>
+    </box>
+  )
 }
 
 function createDefaultButton(
@@ -255,6 +342,7 @@ export default function VolumeMenu() {
           const state = volumeMenuState.peek()
 
           clearBox(self)
+          self.append((<VolumeStatus state={state} />) as Gtk.Widget)
           self.append(
             VolumeMenuSection({
               title: "Output",
