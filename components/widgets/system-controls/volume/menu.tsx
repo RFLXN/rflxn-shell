@@ -2,6 +2,7 @@ import { onCleanup } from "ags"
 import { Astal, Gtk } from "ags/gtk4"
 import Icon from "../../../icon"
 import { launchSystemControlMenuProgram } from "../menu-config"
+import { closeSystemControlsMenu } from "../store"
 import {
   setVolumeMenuDeviceDefault,
   setVolumeMenuDeviceMuted,
@@ -93,7 +94,9 @@ function VolumeStatus({ state }: { state: VolumeMenuState }) {
         ) as Gtk.Widget}
         $={(self) => {
           self.connect("clicked", () => {
-            launchSystemControlMenuProgram("volume")
+            if (launchSystemControlMenuProgram("volume")) {
+              closeSystemControlsMenu()
+            }
           })
         }}
       />

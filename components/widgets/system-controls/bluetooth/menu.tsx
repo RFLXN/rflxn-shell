@@ -2,6 +2,7 @@ import { onCleanup } from "ags"
 import { Gtk } from "ags/gtk4"
 import Icon from "../../../icon"
 import { launchSystemControlMenuProgram } from "../menu-config"
+import { closeSystemControlsMenu } from "../store"
 import {
   bluetoothMenuState,
   type BluetoothMenuDevice,
@@ -111,7 +112,9 @@ function BluetoothStatus({ state }: { state: BluetoothMenuState }) {
         ) as Gtk.Widget}
         $={(self) => {
           self.connect("clicked", () => {
-            launchSystemControlMenuProgram("bluetooth")
+            if (launchSystemControlMenuProgram("bluetooth")) {
+              closeSystemControlsMenu()
+            }
           })
         }}
       />
