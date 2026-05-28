@@ -68,6 +68,16 @@ function createHyprlandStore(): HyprlandStore {
   const hyprlandSignalIds = HYPRLAND_REFRESH_SIGNALS.map((signal) =>
     hyprland.connect(signal, () => queueRefetch()),
   )
+  const urgentWindowAddresses = new Set<string>()
+  const urgentSignalId = hyprland.connect("urgent", (_hyprland, client) => {
+    const address = client.get_address()
+
+    if (address) {
+      urgentWindowAddresses.add(address)
+    }
+
+    queueRefetch()
+  })
   const clientSignalIds = new Map<
     string,
     { client: AstalHyprland.Client; ids: number[] }
@@ -109,6 +119,28 @@ function createHyprlandStore(): HyprlandStore {
     }
   }
 
+  function syncUrgentWindowAddresses(
+    workspaceItems: HyprlandWorkspaceSnapshot[],
+  ) {
+    const activeWindowAddresses = new Set<string>()
+
+    for (const workspace of workspaceItems) {
+      for (const window of workspace.windows) {
+        activeWindowAddresses.add(window.address)
+
+        if (workspace.status === "focused") {
+          urgentWindowAddresses.delete(window.address)
+        }
+      }
+    }
+
+    for (const address of urgentWindowAddresses) {
+      if (!activeWindowAddresses.has(address)) {
+        urgentWindowAddresses.delete(address)
+      }
+    }
+  }
+
   async function refetchNow() {
     if (disposed) return
 
@@ -124,12 +156,13 @@ function createHyprlandStore(): HyprlandStore {
         pendingRefetch = false
         syncClientSignals()
 
-        const next = await fetchHyprlandWorkspaces()
+        const next = await fetchHyprlandWorkspaces({ urgentWindowAddresses })
 
         if (disposed) {
           return
         }
 
+        syncUrgentWindowAddresses(next)
         setWorkspaces(next)
         syncClientSignals()
       } while (pendingRefetch && !disposed)
@@ -163,6 +196,8 @@ function createHyprlandStore(): HyprlandStore {
     for (const id of hyprlandSignalIds) {
       hyprland.disconnect(id)
     }
+
+    hyprland.disconnect(urgentSignalId)
 
     for (const subscription of clientSignalIds.values()) {
       for (const id of subscription.ids) {

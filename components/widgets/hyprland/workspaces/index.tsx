@@ -63,8 +63,9 @@ function getWorkspaceClassName(workspace: HyprlandWorkspaceSnapshot) {
   return [
     "widget-workspaces-item",
     `is-${workspace.status}`,
+    workspace.urgent ? "is-urgent" : "",
     workspace.windows.length > 0 ? "has-windows" : "is-empty",
-  ].join(" ")
+  ].filter(Boolean).join(" ")
 }
 
 function getWindowClassName(window: HyprlandWindowSnapshot) {

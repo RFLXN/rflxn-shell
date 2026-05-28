@@ -20,7 +20,12 @@ export type HyprlandWorkspaceSnapshot = {
   id: number
   status: HyprlandWorkspaceStatus
   monitor: string
+  urgent: boolean
   windows: HyprlandWindowSnapshot[]
+}
+
+export type FetchHyprlandWorkspacesOptions = {
+  urgentWindowAddresses?: ReadonlySet<string>
 }
 
 let apps: AstalApps.Apps | null = null
@@ -219,6 +224,7 @@ function toWorkspaceSnapshot(
   activeWorkspaceIds: Set<number>,
   focusedWorkspaceId: number,
   focusedWindowAddress: string | null,
+  urgentWindowAddresses: ReadonlySet<string>,
 ): HyprlandWorkspaceSnapshot {
   const id = workspace.get_id()
   const focused = id === focusedWorkspaceId
@@ -227,11 +233,14 @@ function toWorkspaceSnapshot(
     .get_clients()
     .map((client) => toWindowSnapshot(client, focusedWindowAddress))
   const occupied = windows.length > 0
+  const urgent =
+    !focused && windows.some((window) => urgentWindowAddresses.has(window.address))
 
   return {
     id,
     status: getWorkspaceStatus({ focused, active, occupied }),
     monitor: workspace.get_monitor().get_name(),
+    urgent,
     windows,
   }
 }
@@ -247,7 +256,9 @@ function isNormalWorkspace(workspace: AstalHyprland.Workspace) {
   return id > 0 && name !== "special" && !name.startsWith("special:")
 }
 
-export async function fetchHyprlandWorkspaces(): Promise<
+export async function fetchHyprlandWorkspaces({
+  urgentWindowAddresses = new Set<string>(),
+}: FetchHyprlandWorkspacesOptions = {}): Promise<
   HyprlandWorkspaceSnapshot[]
 > {
   const hyprland = getHyprland()
@@ -276,6 +287,7 @@ export async function fetchHyprlandWorkspaces(): Promise<
         activeWorkspaceIds,
         focusedWorkspaceId,
         focusedWindowAddress,
+        urgentWindowAddresses,
       ),
     )
     .sort(byWorkspaceId)
