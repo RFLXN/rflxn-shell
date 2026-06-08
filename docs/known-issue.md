@@ -99,3 +99,26 @@ check based on `wifi.enabled && DeviceState.ACTIVATED`, but the widget should be
 revisited before relying on it for precise network status. If this becomes a
 real UX issue, compare Astal values against `nmcli device status` and consider
 using a small NetworkManager-specific helper for snapshot normalization.
+
+## Volume Percent Label Can Lag While Dragging
+
+The system controls volume menu preserves each device row while the user drags a
+volume slider. This avoids the previous bug where a menu state refresh rebuilt
+the slider widget during pointer interaction and made the drag feel as if it had
+been released.
+
+The tradeoff is that the percentage label can feel slightly behind the pointer if
+it is driven by the external volume snapshot. Volume writes go through
+WirePlumber/Astal asynchronously, and the menu intentionally skips state-driven
+slider synchronization while `isInteracting` is true so stale snapshots cannot
+overwrite the active drag position.
+
+If this becomes a real UX issue, keep these constraints:
+
+- Do not rebuild the slider row while the pointer is interacting with it.
+- Keep source-of-truth synchronization in `syncVolumeDeviceSlider()` for normal
+  state updates.
+- Update the visible percentage label optimistically from the local slider value
+  during `notify::value`, using `formatSliderPercent(value)`.
+- If volume writes are throttled or debounced later, keep label updates immediate
+  and only debounce the actual `setVolumeMenuDeviceVolume()` calls.
