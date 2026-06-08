@@ -10,6 +10,7 @@ import { executeShutdownConfirmationAction } from "./components/shutdown-confirm
 import DateTimeWidget from "./components/widgets/datetime"
 import FeedHubMenu from "./components/widgets/feed-hub/menu"
 import FeedHubWidget from "./components/widgets/feed-hub"
+import NotificationPopups from "./components/widgets/feed-hub/notification-popup"
 import HwMonitorWidget from "./components/widgets/hw-monitor"
 import WindowTitleWidget from "./components/widgets/hyprland/window-title"
 import WorkspacesWidget from "./components/widgets/hyprland/workspaces"
@@ -240,5 +241,8 @@ function renderLayout(
 }
 
 export default function Layout() {
-  return layoutConfig.layouts.flatMap(renderLayout)
+  return [
+    ...layoutConfig.layouts.flatMap(renderLayout),
+    <NotificationPopups />,
+  ]
 }

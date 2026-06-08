@@ -12,6 +12,14 @@
       }
     }
   '',
+  notificationPopupsJson ? builtins.toFile "notification-popups.json" ''
+    {
+      "monitor": "DP-3",
+      "position": "top-right",
+      "timeoutMs": 6000,
+      "maxVisible": 3
+    }
+  '',
 }:
 
 let
@@ -23,6 +31,7 @@ let
     "env.d.ts"
     "ipc"
     "layout.tsx"
+    "notification-popups.json"
     "package.json"
     "style.scss"
     "system-control-menu.json"
@@ -75,6 +84,7 @@ stdenvNoCC.mkDerivation {
       "$out/share/ags/"
     cp ${layoutJson} "$out/share/ags/layout.json"
     cp ${systemControlMenuJson} "$out/share/ags/system-control-menu.json"
+    cp ${notificationPopupsJson} "$out/share/ags/notification-popups.json"
 
     runHook postInstall
   '';

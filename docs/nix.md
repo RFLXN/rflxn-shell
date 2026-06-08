@@ -1,6 +1,6 @@
 # Nix Integration
 
-Last updated: 2026-04-24
+Last updated: 2026-06-08
 
 This flake exposes the shell as both a source package and a Home Manager module.
 
@@ -116,4 +116,26 @@ programs.ags-shell.systemControlMenu.bluetooth.program =
 ```
 
 The configured value is rendered as `system-control-menu.json` inside the
+packaged AGS source tree.
+
+## Notification Popups
+
+Notification popup placement and queue behavior can be configured under
+`programs.ags-shell.notificationPopups`:
+
+```nix
+programs.ags-shell = {
+  enable = true;
+
+  notificationPopups = {
+    monitor = "DP-3";
+    position = "top-right";
+    timeoutMs = 6000;
+    maxVisible = 3;
+  };
+};
+```
+
+`position` accepts `top-left`, `top-right`, `bottom-left`, or `bottom-right`.
+The configured value is rendered as `notification-popups.json` inside the
 packaged AGS source tree.

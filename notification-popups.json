@@ -1,0 +1,6 @@
+{
+  "monitor": "DP-3",
+  "position": "top-right",
+  "timeoutMs": 6000,
+  "maxVisible": 3
+}

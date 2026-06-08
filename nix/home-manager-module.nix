@@ -16,6 +16,7 @@ let
   cfg = config.programs.ags-shell;
   layoutFormat = pkgs.formats.json {};
   systemControlMenuFormat = pkgs.formats.json {};
+  notificationPopupsFormat = pkgs.formats.json {};
   defaultRuntimePackages = mkRuntimePackages pkgs.system pkgs;
   defaultAgsPackage = ags.packages.${pkgs.system}.default.override {
     extraPackages = cfg.runtimePackages;
@@ -32,6 +33,39 @@ let
     else if lib.isDerivation program
     then lib.getExe program
     else toString program;
+  notificationPopupPositionType = types.enum [
+    "top-left"
+    "top-right"
+    "bottom-left"
+    "bottom-right"
+  ];
+  notificationPopupsType = types.submodule {
+    options = {
+      monitor = mkOption {
+        type = types.str;
+        default = "DP-3";
+        description = "Monitor connector where notification popups appear.";
+      };
+
+      position = mkOption {
+        type = notificationPopupPositionType;
+        default = "top-right";
+        description = "Screen corner where notification popups appear.";
+      };
+
+      timeoutMs = mkOption {
+        type = types.ints.positive;
+        default = 6000;
+        description = "How long each notification popup remains visible, in milliseconds.";
+      };
+
+      maxVisible = mkOption {
+        type = types.ints.positive;
+        default = 3;
+        description = "Maximum number of notification popups visible at once.";
+      };
+    };
+  };
   systemControlMenuJson = systemControlMenuFormat.generate "ags-shell-system-control-menu.json" {
     volume = {
       program = programToCommand cfg.systemControlMenu.volume.program;
@@ -40,8 +74,9 @@ let
       program = programToCommand cfg.systemControlMenu.bluetooth.program;
     };
   };
+  notificationPopupsJson = notificationPopupsFormat.generate "ags-shell-notification-popups.json" cfg.notificationPopups;
   generatedPackage = pkgs.callPackage ./package.nix {
-    inherit layoutJson systemControlMenuJson;
+    inherit layoutJson systemControlMenuJson notificationPopupsJson;
   };
   package = if cfg.package == null then generatedPackage else cfg.package;
 in
@@ -97,13 +132,31 @@ in
       };
     };
 
+    notificationPopups = mkOption {
+      type = notificationPopupsType;
+      default = builtins.fromJSON (builtins.readFile ../notification-popups.json);
+      example = literalExpression ''
+        {
+          monitor = "DP-3";
+          position = "top-right";
+          timeoutMs = 6000;
+          maxVisible = 3;
+        }
+      '';
+      description = ''
+        Notification popup placement and queue settings rendered to
+        ~/.config/ags/notification-popups.json.
+      '';
+    };
+
     package = mkOption {
       type = types.nullOr types.package;
       default = null;
       description = ''
         Prebuilt shell source package to link to ~/.config/ags. When null, the
-        module builds this flake's source package with programs.ags-shell.layout
-        and programs.ags-shell.systemControlMenu.
+        module builds this flake's source package with programs.ags-shell.layout,
+        programs.ags-shell.systemControlMenu, and
+        programs.ags-shell.notificationPopups.
       '';
     };
 

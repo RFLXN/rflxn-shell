@@ -1,6 +1,6 @@
 # Current State
 
-Last updated: 2026-04-24
+Last updated: 2026-06-08
 
 ## Summary
 
@@ -158,6 +158,10 @@ It provides:
 - Notification list through `AstalNotifd`
 - Notification dismiss, dismiss all, and action invoke support
 - Empty notification state
+- Edge notification popups for newly received notifications
+- Popup monitor, corner, timeout, and maximum visible count from
+  `notification-popups.json`
+- Popup suppression while the feed hub menu is visible
 
 ### Hyprland Widgets
 
@@ -254,6 +258,10 @@ symlink is created.
 `programs.ags-shell.systemControlMenu.bluetooth.program` can configure external
 programs launched from the system controls menu header buttons. The generated
 runtime config is written to `system-control-menu.json`.
+
+`programs.ags-shell.notificationPopups` can configure notification popup
+monitor connector, screen corner, timeout, and maximum visible count. The
+generated runtime config is written to `notification-popups.json`.
 
 ## Known Gaps
 

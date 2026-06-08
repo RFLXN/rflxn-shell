@@ -329,3 +329,22 @@ $tray-icon-size: 18px;
 .widget-feed-hub-menu-scrim {
   background-color: transparent;
 }
+
+.widget-feed-hub-notification-popup-window {
+  background-color: transparent;
+}
+
+.widget-feed-hub-notification-popup-stack {
+  background-color: transparent;
+}
+
+.widget-feed-hub-notification-popup {
+  margin-bottom: 0;
+  border: solid 1px theme.$widget-border;
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.36);
+
+  > .widget-feed-hub-notification-actions
+    > .widget-feed-hub-notification-popup-action-button {
+    background-color: theme.$widget-bg;
+  }
+}

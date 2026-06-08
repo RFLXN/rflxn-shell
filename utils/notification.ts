@@ -111,31 +111,46 @@ export function fetchNotification(id: number): NotificationSnapshot | null {
 }
 
 export function dismissNotification(id: number) {
-  const notification = getNotifd().get_notification(id)
+  try {
+    const notification = getNotifd().get_notification(id)
 
-  if (!notification) return false
+    if (!notification) return false
 
-  notification.dismiss()
-  return true
+    notification.dismiss()
+    return true
+  } catch (error) {
+    console.error(`Failed to dismiss notification ${id}`, error)
+    return false
+  }
 }
 
 export function dismissAllNotifications() {
-  const notifications = getNotifd().get_notifications()
+  try {
+    const notifications = getNotifd().get_notifications()
 
-  for (const notification of notifications) {
-    notification.dismiss()
+    for (const notification of notifications) {
+      notification.dismiss()
+    }
+
+    return notifications.length
+  } catch (error) {
+    console.error("Failed to dismiss all notifications", error)
+    return 0
   }
-
-  return notifications.length
 }
 
 export function invokeNotificationAction(id: number, actionId: string) {
-  const notification = getNotifd().get_notification(id)
+  try {
+    const notification = getNotifd().get_notification(id)
 
-  if (!notification || !actionId) return false
+    if (!notification || !actionId) return false
 
-  notification.invoke(actionId)
-  return true
+    notification.invoke(actionId)
+    return true
+  } catch (error) {
+    console.error(`Failed to invoke notification ${id} action ${actionId}`, error)
+    return false
+  }
 }
 
 export function getNotificationDaemon() {
