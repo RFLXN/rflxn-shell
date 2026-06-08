@@ -4,6 +4,7 @@ import GLib from "gi://GLib?version=2.0"
 import {
   dismissAllNotifications,
   dismissNotification,
+  fetchNotification,
   fetchNotifications,
   getNotificationDaemon,
   invokeNotificationAction,
@@ -20,8 +21,6 @@ type FeedHubNotificationStore = {
 }
 
 const NOTIFICATION_REFRESH_SIGNALS = [
-  "notified",
-  "resolved",
   "notify::notifications",
 ] as const
 
@@ -75,6 +74,17 @@ function reuseUnchangedNotificationSnapshots(
   })
 }
 
+function byNewestNotification(
+  a: NotificationSnapshot,
+  b: NotificationSnapshot,
+) {
+  return b.time - a.time || b.id - a.id
+}
+
+function sortNotificationSnapshots(notifications: NotificationSnapshot[]) {
+  return notifications.slice().sort(byNewestNotification)
+}
+
 function createFeedHubNotificationStore(): FeedHubNotificationStore {
   const notifd = getNotificationDaemon()
   const [notifications, setNotifications] = createState<
@@ -85,6 +95,12 @@ function createFeedHubNotificationStore(): FeedHubNotificationStore {
   const daemonSignalIds = NOTIFICATION_REFRESH_SIGNALS.map((signal) =>
     notifd.connect(signal, () => queueRefetch()),
   )
+  const notifiedSignalId = notifd.connect("notified", (_notifd, id) => {
+    refetchNotification(id)
+  })
+  const resolvedSignalId = notifd.connect("resolved", (_notifd, id) => {
+    removeNotification(id)
+  })
   const notificationSignalIds = new Map<
     number,
     { notification: AstalNotifd.Notification; ids: number[] }
@@ -115,9 +131,7 @@ function createFeedHubNotificationStore(): FeedHubNotificationStore {
 
       notificationSignalIds.set(id, {
         notification,
-        ids: NOTIFICATION_ITEM_REFRESH_SIGNALS.map((signal) =>
-          notification.connect(signal, () => queueRefetch()),
-        ),
+        ids: connectNotificationSignals(notification),
       })
     }
 
@@ -135,8 +149,6 @@ function createFeedHubNotificationStore(): FeedHubNotificationStore {
   }
 
   function refetchNow() {
-    syncNotificationSignals()
-
     try {
       setNotifications((prev) =>
         reuseUnchangedNotificationSnapshots(prev, fetchNotifications()),
@@ -159,12 +171,69 @@ function createFeedHubNotificationStore(): FeedHubNotificationStore {
     })
   }
 
-  function dismiss(id: number) {
+  function connectNotificationSignals(
+    notification: AstalNotifd.Notification,
+  ) {
+    const signalIds: number[] = []
+
+    for (const signal of NOTIFICATION_ITEM_REFRESH_SIGNALS) {
+      try {
+        signalIds.push(notification.connect(signal, () => queueRefetch()))
+      } catch (error) {
+        console.error(`Failed to connect notification signal ${signal}`, error)
+      }
+    }
+
+    return signalIds
+  }
+
+  function setOrderedNotifications(next: NotificationSnapshot[]) {
+    setNotifications((prev) =>
+      reuseUnchangedNotificationSnapshots(
+        prev,
+        sortNotificationSnapshots(next),
+      ),
+    )
+  }
+
+  function upsertNotification(notification: NotificationSnapshot) {
+    setOrderedNotifications([
+      notification,
+      ...notifications.peek().filter((item) => item.id !== notification.id),
+    ])
+
+    try {
+      syncNotificationSignals()
+    } catch (error) {
+      console.error("Failed to sync notification signals", error)
+    }
+  }
+
+  function removeNotification(id: number) {
     const current = notifications.peek()
 
-    if (current.some((notification) => notification.id === id)) {
-      setNotifications(current.filter((notification) => notification.id !== id))
+    if (!current.some((notification) => notification.id === id)) return
+
+    setNotifications(current.filter((notification) => notification.id !== id))
+  }
+
+  function refetchNotification(id: number) {
+    try {
+      const notification = fetchNotification(id)
+
+      if (notification) {
+        upsertNotification(notification)
+      } else {
+        removeNotification(id)
+      }
+    } catch (error) {
+      console.error(`Failed to fetch notification ${id}`, error)
+      queueRefetch()
     }
+  }
+
+  function dismiss(id: number) {
+    removeNotification(id)
 
     if (!dismissNotification(id)) {
       queueRefetch()
@@ -211,6 +280,9 @@ function createFeedHubNotificationStore(): FeedHubNotificationStore {
     for (const signalId of daemonSignalIds) {
       notifd.disconnect(signalId)
     }
+
+    notifd.disconnect(notifiedSignalId)
+    notifd.disconnect(resolvedSignalId)
 
     for (const subscription of notificationSignalIds.values()) {
       for (const signalId of subscription.ids) {
