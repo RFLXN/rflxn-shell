@@ -612,3 +612,87 @@
     }
   }
 }
+
+.widget-system-controls-volume-osd-window {
+  background-color: transparent;
+}
+
+.widget-system-controls-volume-osd-shell {
+  background-color: transparent;
+}
+
+.widget-system-controls-volume-osd-revealer {
+  background-color: transparent;
+}
+
+.widget-system-controls-volume-osd-card {
+  min-width: 168px;
+  min-height: 154px;
+  padding: 22px 24px 20px;
+  border: solid 1px theme.$widget-border;
+  border-radius: 28px;
+  background-color: rgba(theme.$widget-bg, 0.94);
+  box-shadow: 0 18px 46px rgba(0, 0, 0, 0.36);
+  color: theme.$accent;
+
+  > .widget-system-controls-volume-osd-icon-container {
+    min-width: 74px;
+    min-height: 74px;
+    border-radius: 999px;
+    background-color: theme.$accent-soft;
+    color: theme.$accent;
+
+    > .widget-system-controls-volume-osd-icon {
+      min-width: 44px;
+      min-height: 44px;
+    }
+  }
+
+  > .widget-system-controls-volume-osd-title {
+    color: theme.$text-primary;
+    font-size: 0.96rem;
+    font-weight: 900;
+  }
+
+  > .widget-system-controls-volume-osd-progress {
+    min-width: 112px;
+    min-height: 8px;
+    color: theme.$accent;
+  }
+
+  > .widget-system-controls-volume-osd-percent {
+    color: theme.$text-secondary;
+    font-size: 0.86rem;
+    font-weight: 900;
+  }
+
+  &.is-muted {
+    color: theme.$critical;
+
+    > .widget-system-controls-volume-osd-icon-container {
+      background-color: rgba(theme.$critical, 0.18);
+      color: theme.$critical;
+    }
+
+    > .widget-system-controls-volume-osd-progress {
+      color: theme.$critical;
+    }
+
+    > .widget-system-controls-volume-osd-percent {
+      color: theme.$critical;
+    }
+  }
+
+  &.is-boosted {
+    color: theme.$warning;
+
+    > .widget-system-controls-volume-osd-icon-container {
+      background-color: rgba(theme.$warning, 0.18);
+      color: theme.$warning;
+    }
+
+    > .widget-system-controls-volume-osd-progress {
+      color: theme.$warning;
+    }
+  }
+}

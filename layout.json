@@ -11,6 +11,7 @@
         "app-launcher-menu",
         "feed-hub-menu",
         "system-controls-menu",
+        "system-controls-volume-osd",
         "shutdown-confirmation-overlay",
         "global-menu-close-layer"
       ]

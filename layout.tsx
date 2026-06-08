@@ -16,6 +16,7 @@ import WindowTitleWidget from "./components/widgets/hyprland/window-title"
 import WorkspacesWidget from "./components/widgets/hyprland/workspaces"
 import SystemControlsMenu from "./components/widgets/system-controls/menu"
 import SystemControlsWidget from "./components/widgets/system-controls"
+import VolumeOsd from "./components/widgets/system-controls/volume/osd"
 import {
   activeShutdownConfirmationAction,
   closeShutdownConfirmation,
@@ -38,6 +39,7 @@ type LayoutComponentId =
   | "global-menu-close-layer"
   | "shutdown-confirmation-overlay"
   | "system-controls-menu"
+  | "system-controls-volume-osd"
 
 type LayoutWidgetSlots = {
   left?: LayoutWidgetId[]
@@ -111,6 +113,7 @@ function isLayoutComponentId(value: string): value is LayoutComponentId {
     "global-menu-close-layer",
     "shutdown-confirmation-overlay",
     "system-controls-menu",
+    "system-controls-volume-osd",
   ].includes(value)
 }
 
@@ -214,6 +217,8 @@ function renderComponent(
       return renderShutdownConfirmationOverlay(gdkmonitor)
     case "system-controls-menu":
       return <SystemControlsMenu gdkmonitor={gdkmonitor} />
+    case "system-controls-volume-osd":
+      return <VolumeOsd gdkmonitor={gdkmonitor} />
   }
 }
 

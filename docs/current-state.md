@@ -54,6 +54,7 @@ The primary JSON entry creates:
 - App launcher overlay menu
 - Feed hub overlay menu
 - System controls overlay menu
+- System controls volume OSD overlay
 - Shutdown confirmation overlay
 - Global menu close layers for the other monitors
 
@@ -205,6 +206,10 @@ The right-side drawer currently contains:
 
 The footer actions open the shutdown confirmation overlay before executing the
 actual action.
+
+The volume OSD is mounted as a layout component on the configured monitor. It
+subscribes to default speaker volume and mute state changes, then shows a
+centered macOS-style overlay with the current icon, level, and mute state.
 
 ### Shutdown Confirmation Overlay
 
