@@ -69,15 +69,6 @@ function getVolumeStatusDescription(device: VolumeMenuDevice | null) {
   return `${getDeviceLabel(device)} - ${device.volumePercent}%`
 }
 
-function getVolumeStatusIconName(device: VolumeMenuDevice | null) {
-  if (!device) return "volume_off"
-  if (device.muted) return "volume_mute"
-  if (device.volumePercent <= 0) return "volume_off"
-  if (device.volumePercent >= 50) return "volume_up"
-
-  return "volume_down"
-}
-
 function clampSliderVolume(volume: number) {
   return Math.max(0, Math.min(volume, 1))
 }
@@ -116,10 +107,10 @@ function createMuteIcon(device: VolumeMenuDevice) {
   ) as Gtk.Widget
 }
 
-function createVolumeStatusIcon(device: VolumeMenuDevice | null) {
+function createVolumeStatusIcon() {
   return (
     <Icon
-      name={getVolumeStatusIconName(device)}
+      name="volume_up"
       class="widget-system-controls-volume-menu-status-icon"
       size={20}
     />
@@ -132,7 +123,7 @@ function createVolumeStatusRenderer(state: VolumeMenuState) {
     <centerbox
       widthRequest={34}
       heightRequest={34}
-      centerWidget={createVolumeStatusIcon(defaultOutput)}
+      centerWidget={createVolumeStatusIcon()}
     />
   ) as Gtk.CenterBox
   const descriptionLabel = (
@@ -195,7 +186,6 @@ function updateVolumeStatusRenderer(
 ) {
   const defaultOutput = getDefaultOutputDevice(state)
 
-  renderer.iconContainer.set_center_widget(createVolumeStatusIcon(defaultOutput))
   renderer.descriptionLabel.set_label(getVolumeStatusDescription(defaultOutput))
 }
 

@@ -18,6 +18,7 @@ const materialIconsDir = GLib.build_filenamev([
   "icons",
   "material",
 ])
+const NUMERIC_ICON_RASTER_SCALE = 2
 
 function toMaterialIconPath(name: string) {
   return GLib.build_filenamev([materialIconsDir, `${name}.svg`])
@@ -31,8 +32,16 @@ function readIconName(name: string | Accessor<string>) {
   return isAccessor(name) ? name.peek() : name
 }
 
-function createIconSurface(name: string) {
-  const pixbuf = GdkPixbuf.Pixbuf.new_from_file(toMaterialIconPath(name))
+function createIconSurface(name: string, rasterSize?: number) {
+  const path = toMaterialIconPath(name)
+  const pixbuf = rasterSize
+    ? GdkPixbuf.Pixbuf.new_from_file_at_scale(
+        path,
+        rasterSize,
+        rasterSize,
+        true,
+      )
+    : GdkPixbuf.Pixbuf.new_from_file(path)
   const texture = Gdk.Texture.new_for_pixbuf(pixbuf)
   const [iconSurfaceFd, iconSurfacePath] = GLib.file_open_tmp("new-shell-icon-XXXXXX.png")
 
@@ -67,8 +76,12 @@ export default function Icon({
   // GJS/Cairo bindings available in this repo do not expose the direct
   // in-memory Cairo image-surface path cleanly, so we materialize a temporary
   // PNG surface once and reuse it for drawing.
-  let icon = createIconSurface(readIconName(name))
   const useCssSize = size === "css"
+  const rasterSize =
+    typeof size === "number"
+      ? Math.max(1, Math.ceil(size * NUMERIC_ICON_RASTER_SCALE))
+      : undefined
+  let icon = createIconSurface(readIconName(name), rasterSize)
   const width = typeof size === "number" ? size : icon.width
   const height = typeof size === "number" ? size : icon.height
   const sizeProps = useCssSize
@@ -103,7 +116,7 @@ export default function Icon({
 
         if (isAccessor(name)) {
           const unsubscribe = name.subscribe(() => {
-            icon = createIconSurface(readIconName(name))
+            icon = createIconSurface(readIconName(name), rasterSize)
             self.queue_draw()
           })
 

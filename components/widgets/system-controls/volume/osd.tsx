@@ -57,8 +57,8 @@ function hasRelevantVolumeChange(prev: VolumeState, next: VolumeState) {
 }
 
 function getVolumeIconName(state: VolumeState) {
-  if (state.muted) return "volume_mute"
-  if (state.volumePercent <= 0) return "volume_off"
+  if (state.muted) return "volume_off"
+  if (state.volumePercent <= 0) return "volume_mute"
   if (state.volumePercent >= 50) return "volume_up"
 
   return "volume_down"
@@ -75,17 +75,8 @@ function getVolumeOsdAction(
   return "volume-up"
 }
 
-function getVolumeOsdTitle(action: VolumeOsdAction) {
-  switch (action) {
-    case "muted":
-      return "Sound Off"
-    case "unmuted":
-      return "Sound On"
-    case "volume-down":
-      return "Volume Down"
-    case "volume-up":
-      return "Volume Up"
-  }
+function getVolumeOsdTitle(state: VolumeState) {
+  return state.muted ? "Volume (Muted)" : "Volume"
 }
 
 function createVolumeOsdSnapshot(
@@ -99,9 +90,9 @@ function createVolumeOsdSnapshot(
     action,
     iconName: getVolumeIconName(next),
     muted,
-    percentLabel: muted ? "Muted" : `${next.volumePercent}%`,
-    title: getVolumeOsdTitle(action),
-    volume: muted ? 0 : clampVolume(next.volume),
+    percentLabel: `${next.volumePercent}%`,
+    title: getVolumeOsdTitle(next),
+    volume: clampVolume(next.volume),
     volumePercent: next.volumePercent,
   }
 }
@@ -275,7 +266,8 @@ export default function VolumeOsd({ gdkmonitor }: VolumeOsdProps) {
     )
   }
 
-  function handleVolumeStateChange(next: VolumeState) {
+  function handleVolumeStateChange() {
+    const next = volumeState.peek()
     const prev = previousVolumeState
 
     previousVolumeState = next
@@ -303,15 +295,10 @@ export default function VolumeOsd({ gdkmonitor }: VolumeOsdProps) {
       valign={Gtk.Align.CENTER}
       canTarget={false}
     >
-      <centerbox
-        class="widget-system-controls-volume-osd-icon-container"
-        centerWidget={(
-          <Icon
-            name={snapshot.as((current) => current.iconName)}
-            class="widget-system-controls-volume-osd-icon"
-            size={44}
-          />
-        ) as Gtk.Widget}
+      <Icon
+        name={snapshot.as((current) => current.iconName)}
+        class="widget-system-controls-volume-osd-icon"
+        size={44}
       />
       <label
         class="widget-system-controls-volume-osd-title text"
@@ -338,7 +325,7 @@ export default function VolumeOsd({ gdkmonitor }: VolumeOsdProps) {
       child={card}
     />
   ) as Gtk.Widget
-  const shell = (
+  const filler = (
     <box
       class="widget-system-controls-volume-osd-shell"
       halign={Gtk.Align.FILL}
@@ -346,9 +333,20 @@ export default function VolumeOsd({ gdkmonitor }: VolumeOsdProps) {
       hexpand
       vexpand
       canTarget={false}
-    >
-      {revealer}
-    </box>
+    />
+  ) as Gtk.Widget
+  const shell = (
+    <overlay
+      class="widget-system-controls-volume-osd-shell"
+      child={filler}
+      hexpand
+      vexpand
+      canTarget={false}
+      $={(self) => {
+        self.add_overlay(revealer)
+        self.set_measure_overlay(revealer, false)
+      }}
+    />
   ) as Gtk.Widget
 
   return (
