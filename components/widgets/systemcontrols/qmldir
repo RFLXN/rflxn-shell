@@ -1,0 +1,10 @@
+AudioDeviceSection 1.0 AudioDeviceSection.qml
+BatteryIndicator 1.0 BatteryIndicator.qml
+BluetoothIndicator 1.0 BluetoothIndicator.qml
+NetworkIndicator 1.0 NetworkIndicator.qml
+SystemControlsNetworkPanel 1.0 SystemControlsNetworkPanel.qml
+SystemControls 1.0 SystemControls.qml
+SystemControlsBluetoothPanel 1.0 SystemControlsBluetoothPanel.qml
+SystemControlsMenu 1.0 SystemControlsMenu.qml
+SystemControlsVolumePanel 1.0 SystemControlsVolumePanel.qml
+VolumeIndicator 1.0 VolumeIndicator.qml

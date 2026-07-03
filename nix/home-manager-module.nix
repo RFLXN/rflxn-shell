@@ -1,7 +1,4 @@
-{
-  ags,
-  mkRuntimePackages,
-}:
+{ quickshell }:
 
 {
   config,
@@ -13,78 +10,34 @@
 let
   inherit (lib) literalExpression mkEnableOption mkIf mkOption types;
 
-  cfg = config.programs.ags-shell;
+  cfg = config.services.rflxn-shell;
+  system = pkgs.stdenv.hostPlatform.system;
   layoutFormat = pkgs.formats.json {};
-  systemControlMenuFormat = pkgs.formats.json {};
-  notificationPopupsFormat = pkgs.formats.json {};
-  defaultRuntimePackages = mkRuntimePackages pkgs.system pkgs;
-  defaultAgsPackage = ags.packages.${pkgs.system}.default.override {
-    extraPackages = cfg.runtimePackages;
-  };
-  layoutJson = layoutFormat.generate "ags-shell-layout.json" cfg.layout;
-  programType = types.nullOr (types.oneOf [
-    types.package
-    types.str
-    types.path
-  ]);
-  programToCommand = program:
-    if program == null
-    then null
-    else if lib.isDerivation program
-    then lib.getExe program
-    else toString program;
-  notificationPopupPositionType = types.enum [
-    "top-left"
-    "top-right"
-    "bottom-left"
-    "bottom-right"
+  qtModules = with pkgs.qt6; [
+    qtsvg
+    qtimageformats
+    qtmultimedia
+    qt5compat
   ];
-  notificationPopupsType = types.submodule {
-    options = {
-      monitor = mkOption {
-        type = types.str;
-        default = "DP-3";
-        description = "Monitor connector where notification popups appear.";
-      };
-
-      position = mkOption {
-        type = notificationPopupPositionType;
-        default = "top-right";
-        description = "Screen corner where notification popups appear.";
-      };
-
-      timeoutMs = mkOption {
-        type = types.ints.positive;
-        default = 6000;
-        description = "How long each notification popup remains visible, in milliseconds.";
-      };
-
-      maxVisible = mkOption {
-        type = types.ints.positive;
-        default = 3;
-        description = "Maximum number of notification popups visible at once.";
-      };
-    };
-  };
-  systemControlMenuJson = systemControlMenuFormat.generate "ags-shell-system-control-menu.json" {
-    volume = {
-      program = programToCommand cfg.systemControlMenu.volume.program;
-    };
-    bluetooth = {
-      program = programToCommand cfg.systemControlMenu.bluetooth.program;
-    };
-  };
-  notificationPopupsJson = notificationPopupsFormat.generate "ags-shell-notification-popups.json" cfg.notificationPopups;
+  defaultQuickshellPackage = quickshell.packages.${system}.default.withModules qtModules;
+  defaultRuntimePackages = with pkgs; [
+    blueman
+    hyprland
+    networkmanager
+    pwvucontrol
+    uwsm
+  ];
+  layoutJson = layoutFormat.generate "rflxn-shell-layout.json" cfg.configs;
   generatedPackage = pkgs.callPackage ./package.nix {
-    inherit layoutJson systemControlMenuJson notificationPopupsJson;
+    inherit layoutJson;
   };
   package = if cfg.package == null then generatedPackage else cfg.package;
 in
 {
-  options.programs.ags-shell = {
-    enable = mkEnableOption "the AGS Hyprland shell";
+  options.services.rflxn-shell = {
+    enable = mkEnableOption "the rflxn Quickshell Hyprland shell";
 
-    layout = mkOption {
+    configs = mkOption {
       type = layoutFormat.type;
       default = builtins.fromJSON (builtins.readFile ../layout.json);
       example = literalExpression ''
@@ -93,59 +46,35 @@ in
             {
               monitor = "DP-3";
               widgets = {
-                left = [];
-                center = [ "workspaces" ];
-                right = [];
+                left = [ "feed-hub" "window-title" ];
+                center = [ "workspaces" "datetime" ];
+                right = [ "system-controls" ];
               };
-              components = [ "app-launcher-menu" ];
+              menus = {
+                system-controls = {
+                  direction = "right";
+                  menuWidth = 420;
+                  programs = {
+                    volume.command = "pwvucontrol";
+                    bluetooth.command = "blueman-manager";
+                    network.command = "nm-connection-editor";
+                  };
+                };
+              };
+              components = [
+                "feed-hub-menu"
+                "system-controls-menu"
+                "global-menu-close-layer"
+              ];
             }
           ];
         }
       '';
       description = ''
-        Layout JSON rendered to ~/.config/ags/layout.json. Widget and component
-        identifiers are interpreted by layout.tsx at runtime.
-      '';
-    };
-
-    systemControlMenu = {
-      volume.program = mkOption {
-        type = programType;
-        default = null;
-        example = literalExpression "pkgs.pwvucontrol";
-        description = ''
-          Program launched by the volume header button in the system controls
-          menu. Package values are converted to their main executable with
-          lib.getExe; string values are used as command lines.
-        '';
-      };
-
-      bluetooth.program = mkOption {
-        type = programType;
-        default = null;
-        example = literalExpression "pkgs.blueman";
-        description = ''
-          Program launched by the Bluetooth header button in the system controls
-          menu. Package values are converted to their main executable with
-          lib.getExe; string values are used as command lines.
-        '';
-      };
-    };
-
-    notificationPopups = mkOption {
-      type = notificationPopupsType;
-      default = builtins.fromJSON (builtins.readFile ../notification-popups.json);
-      example = literalExpression ''
-        {
-          monitor = "DP-3";
-          position = "top-right";
-          timeoutMs = 6000;
-          maxVisible = 3;
-        }
-      '';
-      description = ''
-        Notification popup placement and queue settings rendered to
-        ~/.config/ags/notification-popups.json.
+        Layout JSON rendered to layout.json for the shell package. The value is
+        consumed by config/Layouts.qml at runtime and controls monitor-specific
+        bar widgets, menu placement, overlay components, notification popups,
+        and system-control program launch configuration.
       '';
     };
 
@@ -153,35 +82,63 @@ in
       type = types.nullOr types.package;
       default = null;
       description = ''
-        Prebuilt shell source package to link to ~/.config/ags. When null, the
-        module builds this flake's source package with programs.ags-shell.layout,
-        programs.ags-shell.systemControlMenu, and
-        programs.ags-shell.notificationPopups.
+        Prebuilt shell source package. When null, this module builds the current
+        flake source with services.rflxn-shell.configs rendered as layout.json.
       '';
     };
 
-    agsPackage = mkOption {
+    quickshellPackage = mkOption {
       type = types.package;
-      default = defaultAgsPackage;
+      default = defaultQuickshellPackage;
       defaultText = literalExpression ''
-        inputs.<this-flake>.inputs.ags.packages.''${pkgs.system}.default.override {
-          extraPackages = config.programs.ags-shell.runtimePackages;
-        }
+        inputs.<this-flake>.inputs.quickshell.packages.''${pkgs.stdenv.hostPlatform.system}.default.withModules [
+          pkgs.qt6.qtsvg
+          pkgs.qt6.qtimageformats
+          pkgs.qt6.qtmultimedia
+          pkgs.qt6.qt5compat
+        ]
       '';
-      description = "AGS package installed for the user.";
+      description = "Quickshell package used to run the shell.";
     };
 
     runtimePackages = mkOption {
       type = types.listOf types.package;
       default = defaultRuntimePackages;
-      defaultText = literalExpression "the same Astal/Gtk runtime package set used by this flake's devShell";
-      description = "Runtime packages installed for the user alongside AGS.";
+      defaultText = literalExpression ''
+        with pkgs; [ blueman hyprland networkmanager pwvucontrol uwsm ]
+      '';
+      description = ''
+        Runtime tools made available to the user session. The defaults cover
+        nmcli, hyprctl, uwsm, pwvucontrol, and blueman-manager.
+      '';
+    };
+
+    systemdTarget = mkOption {
+      type = types.str;
+      default = "graphical-session.target";
+      description = "User systemd target that starts the rflxn-shell service.";
     };
   };
 
   config = mkIf cfg.enable {
-    home.packages = [ package cfg.agsPackage ] ++ cfg.runtimePackages;
+    home.packages = [ cfg.quickshellPackage package ] ++ cfg.runtimePackages;
 
-    xdg.configFile."ags".source = "${package}/share/ags";
+    xdg.configFile."quickshell/rflxn-shell".source = "${package}/share/rflxn-shell";
+
+    systemd.user.services.rflxn-shell = {
+      Unit = {
+        Description = "rflxn Quickshell Hyprland shell";
+        After = [ cfg.systemdTarget ];
+        PartOf = [ cfg.systemdTarget ];
+      };
+
+      Service = {
+        ExecStart = "${lib.getExe cfg.quickshellPackage} --path ${package}/share/rflxn-shell/shell.qml --no-duplicate";
+        Restart = "on-failure";
+        RestartSec = 2;
+      };
+
+      Install.WantedBy = [ cfg.systemdTarget ];
+    };
   };
 }

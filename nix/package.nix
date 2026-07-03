@@ -2,42 +2,16 @@
   lib,
   stdenvNoCC,
   layoutJson ? ../layout.json,
-  systemControlMenuJson ? builtins.toFile "system-control-menu.json" ''
-    {
-      "volume": {
-        "program": null
-      },
-      "bluetooth": {
-        "program": null
-      }
-    }
-  '',
-  notificationPopupsJson ? builtins.toFile "notification-popups.json" ''
-    {
-      "monitor": "DP-3",
-      "position": "top-right",
-      "timeoutMs": 6000,
-      "maxVisible": 3
-    }
-  '',
 }:
 
 let
   root = toString ../.;
   includedTopLevel = [
-    "app.tsx"
-    "assets"
+    "ScreenShell.qml"
     "components"
-    "env.d.ts"
-    "ipc"
-    "layout.tsx"
-    "notification-popups.json"
-    "package.json"
-    "style.scss"
-    "system-control-menu.json"
-    "styles"
-    "tsconfig.json"
-    "utils"
+    "config"
+    "shell.qml"
+    "theme"
   ];
 
   relPath = path:
@@ -46,11 +20,10 @@ let
     in
       if pathString == root then "" else lib.removePrefix "${root}/" pathString;
 
-  topLevel = path:
-    builtins.elemAt (lib.splitString "/" path) 0;
+  topLevel = path: builtins.elemAt (lib.splitString "/" path) 0;
 in
 stdenvNoCC.mkDerivation {
-  pname = "ags-shell-config";
+  pname = "rflxn-shell";
   version = "0.1.0";
 
   src = lib.cleanSourceWith {
@@ -68,29 +41,21 @@ stdenvNoCC.mkDerivation {
   installPhase = ''
     runHook preInstall
 
-    mkdir -p "$out/share/ags"
+    mkdir -p "$out/share/rflxn-shell"
     cp -R \
-      app.tsx \
-      assets \
+      ScreenShell.qml \
       components \
-      env.d.ts \
-      ipc \
-      layout.tsx \
-      package.json \
-      style.scss \
-      styles \
-      tsconfig.json \
-      utils \
-      "$out/share/ags/"
-    cp ${layoutJson} "$out/share/ags/layout.json"
-    cp ${systemControlMenuJson} "$out/share/ags/system-control-menu.json"
-    cp ${notificationPopupsJson} "$out/share/ags/notification-popups.json"
+      config \
+      shell.qml \
+      theme \
+      "$out/share/rflxn-shell/"
+    cp ${layoutJson} "$out/share/rflxn-shell/layout.json"
 
     runHook postInstall
   '';
 
   meta = {
-    description = "AGS Hyprland shell source tree";
+    description = "Quickshell Hyprland shell source tree";
     platforms = lib.platforms.linux;
   };
 }

@@ -7,12 +7,113 @@
         "center": ["workspaces", "datetime"],
         "right": ["system-controls"]
       },
+      "menus": {
+        "app-launcher": {
+          "direction": "bottom",
+          "menuWidth": 640,
+          "menuHeight": 560,
+          "menuMargin": 0,
+          "contentPadding": 10,
+          "cornerRadius": 24,
+          "alignment": "center"
+        },
+        "calendar": {
+          "direction": "top",
+          "menuWidth": 360,
+          "menuHeight": 380,
+          "menuMargin": 0,
+          "contentPadding": 18,
+          "cornerRadius": 24,
+          "alignment": "center"
+        },
+        "feed-hub": {
+          "direction": "left",
+          "menuWidth": 450,
+          "menuMargin": 6,
+          "menuTopOffset": 0,
+          "contentPadding": 5,
+          "cornerRadius": 23
+        },
+        "system-controls": {
+          "direction": "right",
+          "menuWidth": 420,
+          "menuMargin": 6,
+          "contentPadding": 18,
+          "cornerRadius": 23,
+          "programs": {
+            "volume": {
+              "command": "pwvucontrol",
+              "rules": "float; size 900 650; center"
+            },
+            "bluetooth": {
+              "command": "blueman-manager",
+              "rules": "float; size 760 560; center"
+            },
+            "network": {
+              "command": "nm-connection-editor",
+              "rules": "float; size 880 640; center"
+            }
+          }
+        }
+      },
       "components": [
         "app-launcher-menu",
+        "calendar-menu",
         "feed-hub-menu",
         "system-controls-menu",
-        "system-controls-volume-osd",
-        "shutdown-confirmation-overlay",
+        {
+          "id": "notification-popups",
+          "position": "top-right",
+          "timeoutMs": 6000,
+          "maxVisible": 3,
+          "margin": 8,
+          "popupWidth": 392
+        },
+        "global-menu-close-layer"
+      ]
+    },
+    {
+      "monitor": "eDP-1",
+      "widgets": {
+        "left": ["datetime"],
+        "center": ["workspaces"],
+        "right": ["system-controls"]
+      },
+      "menus": {
+        "calendar": {
+          "direction": "top",
+          "menuWidth": 360,
+          "menuHeight": 380,
+          "menuMargin": 0,
+          "contentPadding": 18,
+          "cornerRadius": 24,
+          "alignment": "left"
+        },
+        "system-controls": {
+          "direction": "right",
+          "menuWidth": 420,
+          "menuMargin": 6,
+          "contentPadding": 18,
+          "cornerRadius": 23,
+          "programs": {
+            "volume": {
+              "command": "pwvucontrol",
+              "rules": "float; size 900 650; center"
+            },
+            "bluetooth": {
+              "command": "blueman-manager",
+              "rules": "float; size 760 560; center"
+            },
+            "network": {
+              "command": "nm-connection-editor",
+              "rules": "float; size 880 640; center"
+            }
+          }
+        }
+      },
+      "components": [
+        "calendar-menu",
+        "system-controls-menu",
         "global-menu-close-layer"
       ]
     },
@@ -21,9 +122,23 @@
       "widgets": {
         "left": ["datetime"],
         "center": ["workspaces"],
-        "right": ["hw-monitor"]
+        "right": []
       },
-      "components": []
+      "menus": {
+        "calendar": {
+          "direction": "top",
+          "menuWidth": 360,
+          "menuHeight": 380,
+          "menuMargin": 0,
+          "contentPadding": 18,
+          "cornerRadius": 24,
+          "alignment": "left"
+        }
+      },
+      "components": [
+        "calendar-menu",
+        "global-menu-close-layer"
+      ]
     }
   ]
 }

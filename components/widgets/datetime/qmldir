@@ -1,0 +1,4 @@
+CalendarMenu 1.0 CalendarMenu.qml
+CalendarView 1.0 CalendarView.qml
+DateTime 1.0 DateTime.qml
+RollingDigit 1.0 RollingDigit.qml

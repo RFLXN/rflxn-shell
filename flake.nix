@@ -1,106 +1,102 @@
 {
-  description = "My Awesome Desktop Shell";
+  description = "Quickshell development shell for Hyprland";
 
   inputs = {
-    nixpkgs.url = "github:nixos/nixpkgs?ref=nixos-unstable";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
 
-    ags = {
-      url = "github:aylur/ags";
+    quickshell = {
+      url = "github:quickshell-mirror/quickshell";
       inputs.nixpkgs.follows = "nixpkgs";
     };
   };
 
-  outputs = {
-    self,
-    nixpkgs,
-    ags,
-  }: let
-    systems = [
-      "x86_64-linux"
-      "aarch64-linux"
-    ];
-
-    mkAstalPackages = system:
-      with ags.packages.${system}; [
-        astal4 # or astal3 for gtk3
-        io
-        apps
-        battery
-        bluetooth
-        hyprland
-        mpris
-        network
-        notifd
-        tray
-        wireplumber
-        powerprofiles
+  outputs =
+    { self, nixpkgs, quickshell, ... }:
+    let
+      systems = [
+        "x86_64-linux"
+        "aarch64-linux"
       ];
 
-    mkRuntimePackages = system: pkgs:
-      let
-        astalPackages = mkAstalPackages system;
-      in
-      astalPackages
-      ++ [
-        pkgs.libadwaita
-        pkgs.libsoup_3
-        pkgs.gtk4
-        pkgs.papirus-icon-theme
-        pkgs.upower
-        pkgs.xorg.xprop
-      ];
-
-    forEachSystem = f:
-      nixpkgs.lib.genAttrs systems (system:
+      forAllSystems = nixpkgs.lib.genAttrs systems;
+      mkQtModules = pkgs:
+        with pkgs.qt6; [
+          qtsvg
+          qtimageformats
+          qtmultimedia
+          qt5compat
+        ];
+    in
+    {
+      packages = forAllSystems (
+        system:
         let
           pkgs = nixpkgs.legacyPackages.${system};
-          extraPackages = mkRuntimePackages system pkgs;
-          agsPackage = ags.packages.${system}.default.override {
-            inherit extraPackages;
-          };
         in
-          f {
-            inherit
-              system
-              pkgs
-              extraPackages
-              agsPackage
-              ;
-          });
-  in {
-    packages = forEachSystem ({
-      pkgs,
-      ...
-    }: rec {
-      ags-shell = pkgs.callPackage ./nix/package.nix {
-        layoutJson = ./layout.json;
+        rec {
+          rflxn-shell = pkgs.callPackage ./nix/package.nix {
+            layoutJson = ./layout.json;
+          };
+
+          default = rflxn-shell;
+        }
+      );
+
+      devShells = forAllSystems (
+        system:
+        let
+          pkgs = nixpkgs.legacyPackages.${system};
+
+          quickshellPkg = quickshell.packages.${system}.default.withModules (mkQtModules pkgs);
+        in
+        {
+          default = pkgs.mkShell {
+            packages =
+              with pkgs;
+              [
+                quickshellPkg
+
+                # QML language server and useful Qt inspection tools.
+                qt6.qtdeclarative
+                qt6.qttools
+
+                # Hyprland and Wayland helpers commonly used while iterating on a shell.
+                hyprland
+                grim
+                slurp
+                wl-clipboard
+
+                inotify-tools
+                jq
+                libnotify
+                socat
+              ];
+
+            shellHook = ''
+              echo "Quickshell dev shell"
+              echo "  system: ${system}"
+              echo "  quickshell: $(quickshell --version 2>/dev/null || echo unknown)"
+              echo
+              echo "Try: quickshell -p ./shell.qml"
+            '';
+          };
+        }
+      );
+
+      homeManagerModules = rec {
+        rflxn-shell = import ./nix/home-manager-module.nix {
+          inherit quickshell;
+        };
+
+        default = rflxn-shell;
       };
 
-      default = ags-shell;
-    });
+      nixosModules = rec {
+        rflxn-shell = import ./nix/nixos-module.nix {
+          inherit self;
+        };
 
-    devShells = forEachSystem ({
-      pkgs,
-      agsPackage,
-      ...
-    }: {
-      default = pkgs.mkShell {
-        buildInputs = [ agsPackage ];
+        default = rflxn-shell;
       };
-    });
-
-    homeManagerModules = rec {
-      ags-shell = import ./nix/home-manager-module.nix {
-        inherit ags mkRuntimePackages;
-      };
-
-      default = ags-shell;
     };
-
-    nixosModules = {
-      ags-shell = import ./nix/nixos-module.nix {
-        inherit self;
-      };
-    };
-  };
 }
