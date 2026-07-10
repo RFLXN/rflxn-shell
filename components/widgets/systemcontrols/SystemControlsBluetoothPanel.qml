@@ -276,7 +276,7 @@ Rectangle {
                     Text {
                         width: parent.width
                         color: Colors.textPrimary
-                        font.family: "Pretendard"
+                        font.family: Typography.textFamily
                         font.pixelSize: 14
                         font.weight: Font.ExtraBold
                         text: "Bluetooth"
@@ -286,7 +286,7 @@ Rectangle {
                         width: parent.width
                         color: Colors.textMuted
                         elide: Text.ElideRight
-                        font.family: "Pretendard"
+                        font.family: Typography.textFamily
                         font.pixelSize: 12
                         font.weight: Font.DemiBold
                         text: root.statusDescription()
@@ -307,7 +307,7 @@ Rectangle {
 
                         anchors.centerIn: parent
                         color: root.powered && !root.adapterBlocked ? Colors.accent : Colors.textMuted
-                        font.family: "Pretendard"
+                        font.family: Typography.textFamily
                         font.pixelSize: 11
                         font.weight: Font.ExtraBold
                         text: root.statusLabel()
@@ -335,7 +335,7 @@ Rectangle {
                     anchors.verticalCenter: parent.verticalCenter
                     width: 16
                     color: Colors.textMuted
-                    font.family: "Symbols Nerd Font Mono"
+                    font.family: Typography.iconFamily
                     font.pixelSize: 11
                     horizontalAlignment: Text.AlignHCenter
                     text: "\uf0c0"
@@ -344,7 +344,7 @@ Rectangle {
                 Text {
                     anchors.verticalCenter: parent.verticalCenter
                     color: Colors.textMuted
-                    font.family: "Pretendard"
+                    font.family: Typography.textFamily
                     font.pixelSize: 12
                     font.weight: Font.ExtraBold
                     text: "Connected devices"
@@ -354,7 +354,7 @@ Rectangle {
             Text {
                 width: parent.width
                 color: Colors.textMuted
-                font.family: "Pretendard"
+                font.family: Typography.textFamily
                 font.pixelSize: 12
                 font.weight: Font.DemiBold
                 leftPadding: 10
@@ -397,7 +397,7 @@ Rectangle {
                             width: parent.width - 18
                             color: Colors.textPrimary
                             elide: Text.ElideRight
-                            font.family: "Pretendard"
+                            font.family: Typography.textFamily
                             font.pixelSize: 12
                             font.weight: Font.Bold
                             text: root.deviceName(modelData)
@@ -426,7 +426,7 @@ Rectangle {
 
                                     anchors.centerIn: parent
                                     color: modelData === "Blocked" ? Colors.critical : Colors.textSecondary
-                                    font.family: "Pretendard"
+                                    font.family: Typography.textFamily
                                     font.pixelSize: 10
                                     font.weight: Font.ExtraBold
                                     text: modelData

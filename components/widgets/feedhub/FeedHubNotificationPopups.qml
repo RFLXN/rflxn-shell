@@ -1,5 +1,9 @@
+pragma ComponentBehavior: Bound
+
 import Quickshell
+import Quickshell.Hyprland
 import QtQuick
+import "../../../config"
 import "../../../theme"
 import "../../state"
 
@@ -11,6 +15,7 @@ PanelWindow {
     property int popupWidth: 392
     property int timeoutMs: 6000
     property string position: "top-right"
+    property string screenName: ""
     property var expiresAtById: ({})
     property var modelData
     property var popups: []
@@ -20,6 +25,9 @@ PanelWindow {
     readonly property string normalizedPosition: normalizePosition(position)
     readonly property var orderedPopups: topPosition ? popups : popups.slice().reverse()
     readonly property bool topPosition: normalizedPosition.startsWith("top-")
+    readonly property int effectiveScreenHeight: Math.max(1, Number(modelData?.height ?? 1))
+    readonly property int effectiveScreenWidth: Math.max(1, Number(modelData?.width ?? 1))
+    readonly property int maximumStackHeight: Math.max(1, effectiveScreenHeight - (topPosition ? Metrics.barHeight : 0) - margin * 2)
 
     screen: modelData
 
@@ -40,8 +48,8 @@ PanelWindow {
     color: "transparent"
     exclusiveZone: 0
     focusable: false
-    implicitHeight: popupStack.implicitHeight
-    implicitWidth: Math.max(1, popupWidth)
+    implicitHeight: Math.min(popupStack.implicitHeight, maximumStackHeight)
+    implicitWidth: Math.max(1, Math.min(popupWidth, effectiveScreenWidth - margin * 2))
     surfaceFormat.opaque: false
     visible: popups.length > 0
 
@@ -56,6 +64,26 @@ PanelWindow {
 
     function popupId(notification) {
         return Number(notification?.id ?? -1);
+    }
+
+    function targetScreenName() {
+        const focusedName = String(Hyprland.focusedMonitor?.name ?? "");
+
+        if (focusedName && Layouts.hasOverlay(Layouts.layoutForScreen(focusedName), "notification-popups"))
+            return focusedName;
+
+        const screens = Quickshell.screens ?? [];
+
+        for (let index = 0; index < screens.length; index++) {
+            const screen = screens[index];
+            const monitorName = String(Hyprland.monitorFor(screen)?.name ?? "");
+            const candidateName = monitorName || String(screen?.name ?? "");
+
+            if (candidateName && Layouts.hasOverlay(Layouts.layoutForScreen(candidateName), "notification-popups"))
+                return candidateName;
+        }
+
+        return "";
     }
 
     function trimExpires(nextPopups, expires) {
@@ -77,7 +105,7 @@ PanelWindow {
     }
 
     function pushPopup(notification) {
-        if (!notification || GlobalMenu.activeMenu === "feed-hub")
+        if (!notification || GlobalMenu.activeMenu === "feed-hub" || screenName !== targetScreenName())
             return;
 
         const id = popupId(notification);
@@ -147,27 +175,50 @@ PanelWindow {
             setPopupList(nextPopups, nextExpires);
     }
 
+    function revealNewestPopup() {
+        const maximumContentY = Math.max(0, popupViewport.contentHeight - popupViewport.height);
+
+        popupViewport.contentY = root.topPosition ? 0 : maximumContentY;
+    }
+
     onEffectiveMaxVisibleChanged: {
         if (popups.length > effectiveMaxVisible)
             setPopupList(popups.slice(0, effectiveMaxVisible), Object.assign({}, expiresAtById));
     }
 
-    Column {
-        id: popupStack
+    onImplicitHeightChanged: Qt.callLater(root.revealNewestPopup)
+    onOrderedPopupsChanged: Qt.callLater(root.revealNewestPopup)
+
+    Flickable {
+        id: popupViewport
 
         width: root.implicitWidth
-        spacing: 8
+        height: root.implicitHeight
+        boundsBehavior: Flickable.StopAtBounds
+        clip: true
+        contentHeight: popupStack.implicitHeight
+        contentWidth: width
+        interactive: contentHeight > height
+        onContentHeightChanged: Qt.callLater(root.revealNewestPopup)
 
-        Repeater {
-            model: root.orderedPopups
+        Column {
+            id: popupStack
 
-            FeedHubNotificationPopupItem {
-                required property var modelData
+            width: popupViewport.width
+            spacing: 8
 
-                width: root.implicitWidth
-                notification: modelData.notification
-                onActionInvoked: (notificationId, action) => root.invokePopupAction(notificationId, action)
-                onDismissRequested: notificationId => root.dismissPopup(notificationId)
+            Repeater {
+                model: root.orderedPopups
+
+                FeedHubNotificationPopupItem {
+                    required property var modelData
+
+                    width: popupStack.width
+                    maximumHeight: root.maximumStackHeight
+                    notification: modelData.notification
+                    onActionInvoked: (notificationId, action) => root.invokePopupAction(notificationId, action)
+                    onDismissRequested: notificationId => root.dismissPopup(notificationId)
+                }
             }
         }
     }

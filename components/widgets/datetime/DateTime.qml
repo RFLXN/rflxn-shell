@@ -1,3 +1,5 @@
+pragma ComponentBehavior: Bound
+
 import Quickshell.Hyprland
 import QtQuick
 import "../../../theme"
@@ -7,14 +9,15 @@ Rectangle {
     id: root
 
     property string format: "yyyy-MM-dd hh:mm:ss AP"
-    property date currentDate: new Date()
+    readonly property date currentDate: ClockState.now
     readonly property string displayText: Qt.formatDateTime(currentDate, format)
-    readonly property var displayTokens: buildDisplayTokens(displayText)
+    readonly property string periodText: Qt.formatDateTime(currentDate, "AP")
+    readonly property var displayTokens: buildDisplayTokens(displayText, periodText)
     property int horizontalPadding: 18
     property int separatorOpticalPadding: 2
     property string menuId: "calendar"
     property var screen
-    property string textFontFamily: "Pretendard"
+    property string textFontFamily: Typography.textFamily
     property int textFontPixelSize: 16
     property int textFontWeight: Font.DemiBold
     readonly property bool active: GlobalMenu.isMenuOpen(menuId, screenName)
@@ -48,13 +51,13 @@ Rectangle {
         }
     }
 
-    function buildDisplayTokens(text) {
+    function buildDisplayTokens(text, period) {
         const tokens = [];
 
         for (let index = 0; index < text.length; index++) {
             const remainingText = text.slice(index);
 
-            if (remainingText === "AM" || remainingText === "PM") {
+            if (period && remainingText === period) {
                 tokens.push({
                     kind: "period",
                     text: remainingText
@@ -134,6 +137,7 @@ Rectangle {
             Item {
                 id: tokenCell
 
+                required property int index
                 property var tokenData: root.tokenAt(index)
 
                 width: root.tokenCellWidth(tokenData)
@@ -302,7 +306,7 @@ Rectangle {
         font.family: root.textFontFamily
         font.pixelSize: root.textFontPixelSize
         font.weight: root.textFontWeight
-        text: "AM"
+        text: Qt.formatTime(new Date(2000, 0, 1, 9, 0, 0), "AP")
     }
 
     TextMetrics {
@@ -311,16 +315,7 @@ Rectangle {
         font.family: root.textFontFamily
         font.pixelSize: root.textFontPixelSize
         font.weight: root.textFontWeight
-        text: "PM"
-    }
-
-    Timer {
-        interval: 1000
-        repeat: true
-        running: true
-        triggeredOnStart: true
-
-        onTriggered: root.currentDate = new Date()
+        text: Qt.formatTime(new Date(2000, 0, 1, 21, 0, 0), "AP")
     }
 
     MouseArea {

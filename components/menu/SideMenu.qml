@@ -41,7 +41,10 @@ PanelWindow {
 
     color: "transparent"
     exclusiveZone: 0
-    focusable: true
+    focusable: menuOpen
+    mask: Region {
+        item: root.menuOpen ? shell : null
+    }
     surfaceFormat.opaque: false
     visible: mounted
 
@@ -166,6 +169,12 @@ PanelWindow {
         id: shell
 
         anchors.fill: parent
+        focus: root.menuOpen
+
+        Keys.onEscapePressed: event => {
+            GlobalMenu.closeActiveMenu();
+            event.accepted = true;
+        }
 
         Rectangle {
             id: scrim

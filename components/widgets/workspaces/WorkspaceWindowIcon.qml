@@ -124,7 +124,7 @@ Item {
         Text {
             anchors.centerIn: parent
             color: root.foreground
-            font.family: "Pretendard"
+            font.family: Typography.textFamily
             font.pixelSize: 14
             font.weight: Font.Bold
             horizontalAlignment: Text.AlignHCenter

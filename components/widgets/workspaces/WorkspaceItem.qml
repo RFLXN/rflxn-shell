@@ -1,3 +1,5 @@
+pragma ComponentBehavior: Bound
+
 import Quickshell.Hyprland
 import QtQml.Models
 import QtQuick
@@ -132,7 +134,7 @@ Rectangle {
     }
 
     Behavior on color {
-        enabled: !workspace?.urgent
+        enabled: !root.workspace?.urgent
 
         ColorAnimation {
             duration: 250
@@ -141,7 +143,7 @@ Rectangle {
     }
 
     Behavior on border.color {
-        enabled: !workspace?.urgent
+        enabled: !root.workspace?.urgent
 
         ColorAnimation {
             duration: 250

@@ -1,3 +1,5 @@
+pragma ComponentBehavior: Bound
+
 import Quickshell
 import QtQuick
 import "../../theme"
@@ -19,6 +21,7 @@ PanelWindow {
     property int contentPadding: 24
     property int widgetSpacing: 12
     property string screenName: ""
+    readonly property bool hasCenterWidgets: (centerWidgets?.length ?? 0) > 0
 
     screen: modelData
 
@@ -131,27 +134,6 @@ PanelWindow {
             clip: true
 
             Row {
-                id: startSlot
-
-                anchors {
-                    left: parent.left
-                    verticalCenter: parent.verticalCenter
-                }
-
-                spacing: root.widgetSpacing
-
-                Repeater {
-                    model: root.leftWidgets
-
-                    Loader {
-                        required property string modelData
-
-                        sourceComponent: root.widgetComponent(modelData)
-                    }
-                }
-            }
-
-            Row {
                 id: centerSlot
 
                 anchors.centerIn: parent
@@ -168,23 +150,62 @@ PanelWindow {
                 }
             }
 
-            Row {
-                id: endSlot
+            Item {
+                id: startRegion
 
-                anchors {
-                    right: parent.right
-                    verticalCenter: parent.verticalCenter
+                anchors.left: parent.left
+                height: parent.height
+                width: root.hasCenterWidgets ? Math.max(0, centerSlot.x - root.widgetSpacing) : Math.max(0, parent.width / 2 - root.widgetSpacing / 2)
+                clip: true
+
+                Row {
+                    id: startSlot
+
+                    anchors {
+                        left: parent.left
+                        verticalCenter: parent.verticalCenter
+                    }
+
+                    spacing: root.widgetSpacing
+
+                    Repeater {
+                        model: root.leftWidgets
+
+                        Loader {
+                            required property string modelData
+
+                            sourceComponent: root.widgetComponent(modelData)
+                        }
+                    }
                 }
+            }
 
-                spacing: root.widgetSpacing
+            Item {
+                id: endRegion
 
-                Repeater {
-                    model: root.rightWidgets
+                x: root.hasCenterWidgets ? Math.min(parent.width, centerSlot.x + centerSlot.width + root.widgetSpacing) : Math.min(parent.width, parent.width / 2 + root.widgetSpacing / 2)
+                width: Math.max(0, parent.width - x)
+                height: parent.height
+                clip: true
 
-                    Loader {
-                        required property string modelData
+                Row {
+                    id: endSlot
 
-                        sourceComponent: root.widgetComponent(modelData)
+                    anchors {
+                        right: parent.right
+                        verticalCenter: parent.verticalCenter
+                    }
+
+                    spacing: root.widgetSpacing
+
+                    Repeater {
+                        model: root.rightWidgets
+
+                        Loader {
+                            required property string modelData
+
+                            sourceComponent: root.widgetComponent(modelData)
+                        }
                     }
                 }
             }

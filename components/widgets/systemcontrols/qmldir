@@ -2,6 +2,7 @@ AudioDeviceSection 1.0 AudioDeviceSection.qml
 BatteryIndicator 1.0 BatteryIndicator.qml
 BluetoothIndicator 1.0 BluetoothIndicator.qml
 NetworkIndicator 1.0 NetworkIndicator.qml
+ProgressRing 1.0 ProgressRing.qml
 SystemControlsNetworkPanel 1.0 SystemControlsNetworkPanel.qml
 SystemControls 1.0 SystemControls.qml
 SystemControlsBluetoothPanel 1.0 SystemControlsBluetoothPanel.qml

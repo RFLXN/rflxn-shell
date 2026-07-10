@@ -1,3 +1,5 @@
+pragma ComponentBehavior: Bound
+
 import Quickshell
 import Quickshell.Hyprland
 import QtQuick
@@ -137,6 +139,7 @@ Scope {
 
         FeedHubNotificationPopups {
             modelData: root.modelData
+            screenName: root.screenName
             margin: root.notificationPopupsConfig.margin ?? 8
             maxVisible: root.notificationPopupsConfig.maxVisible ?? 3
             popupWidth: root.notificationPopupsConfig.popupWidth ?? 392

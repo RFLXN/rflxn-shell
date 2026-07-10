@@ -24,6 +24,11 @@ Rectangle {
     color: Colors.barBg
     radius: 12
 
+    function closeSelectors() {
+        root.inputSelectorOpen = false;
+        root.outputSelectorOpen = false;
+    }
+
     function audioDevices(kind, _revision) {
         const values = Pipewire.nodes.values ?? [];
         const devices = [];
@@ -172,7 +177,7 @@ Rectangle {
                     Text {
                         anchors.centerIn: parent
                         color: headerIconMouseArea.containsMouse ? Colors.textOnAccent : Colors.accent
-                        font.family: "Symbols Nerd Font Mono"
+                        font.family: Typography.iconFamily
                         font.pixelSize: 16
                         text: "\uf028"
 
@@ -203,7 +208,7 @@ Rectangle {
                     Text {
                         width: parent.width
                         color: Colors.textPrimary
-                        font.family: "Pretendard"
+                        font.family: Typography.textFamily
                         font.pixelSize: 14
                         font.weight: Font.ExtraBold
                         text: "Volume"
@@ -213,7 +218,7 @@ Rectangle {
                         width: parent.width
                         color: Colors.textMuted
                         elide: Text.ElideRight
-                        font.family: "Pretendard"
+                        font.family: Typography.textFamily
                         font.pixelSize: 12
                         font.weight: Font.DemiBold
                         text: root.outputStatusDescription()

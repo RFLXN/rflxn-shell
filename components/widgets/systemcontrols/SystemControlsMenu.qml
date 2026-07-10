@@ -1,3 +1,5 @@
+pragma ComponentBehavior: Bound
+
 import Quickshell.Io
 import QtQuick
 import "../../menu"
@@ -25,10 +27,22 @@ SideMenu {
     property string confirmationAction: ""
     property string confirmationDisplayAction: ""
     property string lastPowerAction: ""
+    signal panelResetRequested()
 
     menuId: "system-controls"
     menuWidth: 420
     direction: "right"
+
+    onMenuOpenChanged: {
+        if (menuOpen)
+            return;
+
+        clearConfirmationDisplayTimer.stop();
+        root.confirmationAction = "";
+        root.confirmationDisplayAction = "";
+        root.panelResetRequested();
+        panelFlickable.contentY = 0;
+    }
 
     function actionConfirmLabel(action) {
         if (action === "shutdown")
@@ -388,19 +402,54 @@ SideMenu {
                 y: 2
                 spacing: 10
 
-                SystemControlsVolumePanel {
+                Loader {
+                    id: volumePanelLoader
+
+                    active: root.mounted
                     width: parent.width
-                    onHeaderIconClicked: root.launchPanelProgram("volume")
+                    sourceComponent: Component {
+                        SystemControlsVolumePanel {
+                            id: loadedVolumePanel
+
+                            width: volumePanelLoader.width
+                            onHeaderIconClicked: root.launchPanelProgram("volume")
+
+                            Connections {
+                                target: root
+
+                                function onPanelResetRequested() {
+                                    loadedVolumePanel.closeSelectors();
+                                }
+                            }
+                        }
+                    }
                 }
 
-                SystemControlsNetworkPanel {
+                Loader {
+                    id: networkPanelLoader
+
+                    active: root.mounted
                     width: parent.width
-                    onHeaderIconClicked: root.launchPanelProgram("network")
+                    sourceComponent: Component {
+                        SystemControlsNetworkPanel {
+                            width: networkPanelLoader.width
+                            pollingActive: root.menuOpen
+                            onHeaderIconClicked: root.launchPanelProgram("network")
+                        }
+                    }
                 }
 
-                SystemControlsBluetoothPanel {
+                Loader {
+                    id: bluetoothPanelLoader
+
+                    active: root.mounted
                     width: parent.width
-                    onHeaderIconClicked: root.launchPanelProgram("bluetooth")
+                    sourceComponent: Component {
+                        SystemControlsBluetoothPanel {
+                            width: bluetoothPanelLoader.width
+                            onHeaderIconClicked: root.launchPanelProgram("bluetooth")
+                        }
+                    }
                 }
             }
         }
@@ -429,6 +478,8 @@ SideMenu {
             }
 
             Row {
+                id: footerButtons
+
                 anchors {
                     bottom: parent.bottom
                     left: parent.left
@@ -443,12 +494,14 @@ SideMenu {
                     model: ["logout", "restart", "shutdown"]
 
                     Rectangle {
+                        id: footerButton
+
                         required property string modelData
 
                         anchors.verticalCenter: parent.verticalCenter
-                        width: (parent.width - parent.spacing * 2) / 3
+                        width: (footerButtons.width - footerButtons.spacing * 2) / 3
                         height: 34
-                        color: root.footerButtonBackground(modelData, footerMouseArea.containsMouse)
+                        color: root.footerButtonBackground(footerButton.modelData, footerMouseArea.containsMouse)
                         radius: 8
 
                         Behavior on color {
@@ -472,7 +525,7 @@ SideMenu {
                                     asynchronous: true
                                     mipmap: true
                                     opacity: footerMouseArea.containsMouse ? 0 : 1
-                                    source: root.svgSource(root.actionIconPath(modelData), Colors.textSecondary)
+                                    source: root.svgSource(root.actionIconPath(footerButton.modelData), Colors.textSecondary)
                                     sourceSize.height: 16
                                     sourceSize.width: 16
 
@@ -489,7 +542,7 @@ SideMenu {
                                     asynchronous: true
                                     mipmap: true
                                     opacity: footerMouseArea.containsMouse ? 1 : 0
-                                    source: root.svgSource(root.actionIconPath(modelData), root.actionTone(modelData))
+                                    source: root.svgSource(root.actionIconPath(footerButton.modelData), root.actionTone(footerButton.modelData))
                                     sourceSize.height: 16
                                     sourceSize.width: 16
 
@@ -504,12 +557,12 @@ SideMenu {
 
                             Text {
                                 anchors.verticalCenter: parent.verticalCenter
-                                color: footerMouseArea.containsMouse ? root.actionTone(modelData) : Colors.textSecondary
+                                color: footerMouseArea.containsMouse ? root.actionTone(footerButton.modelData) : Colors.textSecondary
                                 elide: Text.ElideRight
-                                font.family: "Pretendard"
+                                font.family: Typography.textFamily
                                 font.pixelSize: 11
                                 font.weight: Font.ExtraBold
-                                text: root.actionLabel(modelData)
+                                text: root.actionLabel(footerButton.modelData)
 
                                 Behavior on color {
                                     ColorAnimation {
@@ -527,7 +580,7 @@ SideMenu {
                             cursorShape: Qt.PointingHandCursor
                             hoverEnabled: true
 
-                            onClicked: root.openPowerConfirmation(modelData)
+                            onClicked: root.openPowerConfirmation(footerButton.modelData)
                         }
                     }
                 }
@@ -607,7 +660,7 @@ SideMenu {
                 Text {
                     width: parent.width
                     color: Colors.textPrimary
-                    font.family: "Pretendard"
+                    font.family: Typography.textFamily
                     font.pixelSize: 21
                     font.weight: Font.Black
                     horizontalAlignment: Text.AlignHCenter
@@ -617,7 +670,7 @@ SideMenu {
                 Text {
                     width: parent.width
                     color: Colors.textSecondary
-                    font.family: "Pretendard"
+                    font.family: Typography.textFamily
                     font.pixelSize: 13
                     font.weight: Font.DemiBold
                     horizontalAlignment: Text.AlignHCenter
@@ -639,7 +692,7 @@ SideMenu {
                         Text {
                             anchors.centerIn: parent
                             color: cancelMouseArea.containsMouse ? Colors.textPrimary : Colors.textSecondary
-                            font.family: "Pretendard"
+                            font.family: Typography.textFamily
                             font.pixelSize: 12
                             font.weight: Font.ExtraBold
                             text: "Cancel"
@@ -665,7 +718,7 @@ SideMenu {
                         Text {
                             anchors.centerIn: parent
                             color: confirmMouseArea.containsMouse ? (root.confirmationDisplayAction === "restart" ? "#15110a" : root.confirmationDisplayAction === "shutdown" ? "#fff0f3" : Colors.textOnAccent) : root.actionTone(root.confirmationDisplayAction)
-                            font.family: "Pretendard"
+                            font.family: Typography.textFamily
                             font.pixelSize: 12
                             font.weight: Font.ExtraBold
                             text: root.actionConfirmLabel(root.confirmationDisplayAction)

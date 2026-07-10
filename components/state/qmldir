@@ -1,1 +1,4 @@
+singleton ClockState 1.0 ClockState.qml
 singleton GlobalMenu 1.0 GlobalMenu.qml
+singleton NetworkState 1.0 NetworkState.qml
+singleton HyprlandState 1.0 HyprlandState.qml

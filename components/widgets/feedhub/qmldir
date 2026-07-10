@@ -1,6 +1,7 @@
 singleton FeedHubState 1.0 FeedHubState.qml
 FeedHub 1.0 FeedHub.qml
 FeedHubMenu 1.0 FeedHubMenu.qml
+FeedHubNotificationContent 1.0 FeedHubNotificationContent.qml
 FeedHubNotificationItem 1.0 FeedHubNotificationItem.qml
 FeedHubNotificationPopupItem 1.0 FeedHubNotificationPopupItem.qml
 FeedHubNotificationPopups 1.0 FeedHubNotificationPopups.qml

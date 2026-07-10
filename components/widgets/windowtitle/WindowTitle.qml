@@ -1,12 +1,11 @@
-import Quickshell.Hyprland
-import Quickshell.Io
 import QtQuick
+import "../../state"
 import "../../../theme"
 
 Item {
     id: root
 
-    property string title: ""
+    property string title: HyprlandState.activeWindowTitle
     property int visibleWidth: 480
     property int contentHeight: Metrics.widgetHeight
     property int scrollInterval: 16
@@ -16,7 +15,7 @@ Item {
     property real scrollOffset: 0
     property string scrollPhase: "start-pause"
     property int phaseElapsed: 0
-    property string textFontFamily: "Pretendard"
+    property string textFontFamily: Typography.textFamily
     property int textFontPixelSize: 14
     property int textFontWeight: Font.Medium
     readonly property int textWidth: Math.ceil(titleMetrics.advanceWidth)
@@ -28,28 +27,10 @@ Item {
     clip: true
     opacity: title.length > 0 ? 1 : 0
 
-    function displayTitle(window) {
-        const title = String(window?.title ?? "").trim();
-
-        if (title.length > 0)
-            return title;
-
-        return String(window?.class ?? "").trim();
-    }
-
     function resetScroll() {
         scrollOffset = 0;
         scrollPhase = "start-pause";
         phaseElapsed = 0;
-    }
-
-    function queueRefresh() {
-        if (snapshotProcess.running) {
-            refreshDebounce.restart();
-            return;
-        }
-
-        snapshotProcess.exec(snapshotProcess.command);
     }
 
     function updateScroll() {
@@ -140,51 +121,6 @@ Item {
         }
     }
 
-    Timer {
-        id: refreshDebounce
-
-        interval: 60
-        repeat: false
-
-        onTriggered: root.queueRefresh()
-    }
-
-    Process {
-        id: snapshotProcess
-
-        command: ["hyprctl", "-j", "activewindow"]
-        stderr: StdioCollector {}
-        stdout: StdioCollector {
-            id: snapshotStdout
-        }
-
-        onExited: (exitCode, exitStatus) => {
-            if (exitCode !== 0)
-                return;
-
-            try {
-                root.title = root.displayTitle(JSON.parse(snapshotStdout.text || "{}"));
-            } catch (error) {
-                console.error("Failed to parse Hyprland active window", error);
-            }
-        }
-    }
-
-    Connections {
-        target: Hyprland
-
-        function onActiveToplevelChanged() {
-            refreshDebounce.restart();
-        }
-
-        function onRawEvent(event) {
-            const name = event.name;
-
-            if (name === "activewindow" || name === "activewindowv2" || name === "windowtitle" || name === "windowtitlev2" || name === "openwindow" || name === "closewindow")
-                refreshDebounce.restart();
-        }
-    }
-
     onTitleChanged: {
         root.resetScroll();
         root.updateScroll();
@@ -192,5 +128,4 @@ Item {
 
     onTextWidthChanged: root.updateScroll()
 
-    Component.onCompleted: root.queueRefresh()
 }

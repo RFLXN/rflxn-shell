@@ -1,4 +1,7 @@
-{ quickshell }:
+{
+  quickshell,
+  nixpkgs ? quickshell.inputs.nixpkgs,
+}:
 
 {
   config,
@@ -8,12 +11,20 @@
 }:
 
 let
-  inherit (lib) literalExpression mkEnableOption mkIf mkOption types;
+  inherit (lib)
+    literalExpression
+    mkDefault
+    mkEnableOption
+    mkIf
+    mkOption
+    types
+    ;
 
   cfg = config.services.rflxn-shell;
   system = pkgs.stdenv.hostPlatform.system;
-  layoutFormat = pkgs.formats.json {};
-  qtModules = with pkgs.qt6; [
+  layoutFormat = pkgs.formats.json { };
+  quickshellPkgs = nixpkgs.legacyPackages.${system};
+  qtModules = with quickshellPkgs.qt6; [
     qtsvg
     qtimageformats
     qtmultimedia
@@ -27,13 +38,46 @@ let
     pwvucontrol
     uwsm
   ];
+  requiredRuntimePackages = with pkgs; [
+    networkmanagerapplet
+  ];
+  symbolsFont = lib.attrByPath [ "nerd-fonts" "symbols-only" ] (pkgs.nerdfonts.override {
+    fonts = [ "NerdFontsSymbolsOnly" ];
+  }) pkgs;
+  fontPackages = [
+    pkgs.pretendard
+    symbolsFont
+  ];
+  servicePathPackages = [
+    pkgs.bash
+    pkgs.coreutils
+    pkgs.systemd
+  ]
+  ++ requiredRuntimePackages
+  ++ cfg.runtimePackages;
+  servicePath = lib.concatStringsSep ":" [
+    (lib.makeBinPath servicePathPackages)
+    "${config.home.profileDirectory}/bin"
+    "/run/current-system/sw/bin"
+    "/usr/local/bin"
+    "/usr/bin"
+    "/bin"
+  ];
   layoutJson = layoutFormat.generate "rflxn-shell-layout.json" cfg.configs;
   generatedPackage = pkgs.callPackage ./package.nix {
     inherit layoutJson;
   };
   package = if cfg.package == null then generatedPackage else cfg.package;
+  quickshellMainProgram = cfg.quickshellPackage.meta.mainProgram or null;
+  quickshellExecutable = lib.getExe' cfg.quickshellPackage (
+    if quickshellMainProgram == null then "quickshell" else quickshellMainProgram
+  );
+  shellConfigPath = "${config.xdg.configHome}/quickshell/rflxn-shell/shell.qml";
 in
 {
+  _file = "rflxn-shell/home-manager-module.nix";
+  key = "rflxn-shell/home-manager-module";
+
   options.services.rflxn-shell = {
     enable = mkEnableOption "the rflxn Quickshell Hyprland shell";
 
@@ -91,12 +135,12 @@ in
       type = types.package;
       default = defaultQuickshellPackage;
       defaultText = literalExpression ''
-        inputs.<this-flake>.inputs.quickshell.packages.''${pkgs.stdenv.hostPlatform.system}.default.withModules [
-          pkgs.qt6.qtsvg
-          pkgs.qt6.qtimageformats
-          pkgs.qt6.qtmultimedia
-          pkgs.qt6.qt5compat
-        ]
+        let
+          quickshellPkgs = inputs.<this-flake>.inputs.nixpkgs.legacyPackages.''${pkgs.stdenv.hostPlatform.system};
+        in
+        inputs.<this-flake>.inputs.quickshell.packages.''${pkgs.stdenv.hostPlatform.system}.default.withModules (
+          with quickshellPkgs.qt6; [ qtsvg qtimageformats qtmultimedia qt5compat ]
+        )
       '';
       description = "Quickshell package used to run the shell.";
     };
@@ -121,7 +165,15 @@ in
   };
 
   config = mkIf cfg.enable {
-    home.packages = [ cfg.quickshellPackage package ] ++ cfg.runtimePackages;
+    fonts.fontconfig.enable = mkDefault true;
+
+    home.packages = [
+      cfg.quickshellPackage
+      (lib.hiPrio package)
+    ]
+    ++ requiredRuntimePackages
+    ++ fontPackages
+    ++ cfg.runtimePackages;
 
     xdg.configFile."quickshell/rflxn-shell".source = "${package}/share/rflxn-shell";
 
@@ -130,10 +182,12 @@ in
         Description = "rflxn Quickshell Hyprland shell";
         After = [ cfg.systemdTarget ];
         PartOf = [ cfg.systemdTarget ];
+        X-Restart-Triggers = [ package ];
       };
 
       Service = {
-        ExecStart = "${lib.getExe cfg.quickshellPackage} --path ${package}/share/rflxn-shell/shell.qml --no-duplicate";
+        Environment = [ "PATH=${servicePath}" ];
+        ExecStart = "${quickshellExecutable} --path ${shellConfigPath} --no-duplicate";
         Restart = "on-failure";
         RestartSec = 2;
       };

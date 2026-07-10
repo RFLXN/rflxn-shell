@@ -1,4 +1,3 @@
-import Quickshell.Services.SystemTray
 import Quickshell.Widgets
 import QtQuick
 import "../../../theme"
@@ -57,7 +56,7 @@ Rectangle {
     Text {
         anchors.centerIn: parent
         color: Colors.textSecondary
-        font.family: "Symbols Nerd Font Mono"
+        font.family: Typography.iconFamily
         font.pixelSize: 14
         text: "\uf1c5"
         visible: !trayIcon.visible

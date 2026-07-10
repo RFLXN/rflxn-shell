@@ -13,7 +13,11 @@ SideMenu {
     menuMargin: 0
     menuWidth: 360
 
-    CalendarView {
+    Loader {
         anchors.fill: parent
+        active: root.mounted
+        sourceComponent: Component {
+            CalendarView {}
+        }
     }
 }

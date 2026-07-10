@@ -1,4 +1,5 @@
 import QtQuick
+import "../../../theme"
 
 Item {
     id: root
@@ -10,7 +11,7 @@ Item {
     property real progress: 0
     property bool animating: false
     property color textColor: "white"
-    property string fontFamily: "Pretendard"
+    property string fontFamily: Typography.textFamily
     property int fontPixelSize: 16
     property int fontWeight: Font.DemiBold
     property int duration: 420

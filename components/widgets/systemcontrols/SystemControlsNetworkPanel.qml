@@ -1,12 +1,14 @@
-import Quickshell.Io
 import Quickshell.Networking
 import QtQuick
 import "../../../theme"
+import "../../state"
 
 Rectangle {
     id: root
 
-    property var nmDetailsByDevice: ({})
+    property bool detailsAcquired: false
+    property bool pollingActive: false
+    readonly property var nmDetailsByDevice: NetworkState.nmDetailsByDevice
     readonly property var devices: Networking.devices?.values ?? []
     readonly property string deviceFingerprint: buildDeviceFingerprint()
     readonly property var adapters: adapterList(deviceFingerprint, nmDetailsByDevice)
@@ -228,54 +230,6 @@ Rectangle {
         return address || fallback || "Unknown";
     }
 
-    function parseNmcliDetails(text) {
-        const detailsByDevice = {};
-        let current = null;
-
-        for (const rawLine of String(text ?? "").split("\n")) {
-            const line = rawLine.trim();
-
-            if (!line)
-                continue;
-
-            const separatorIndex = line.indexOf(":");
-
-            if (separatorIndex < 0)
-                continue;
-
-            const key = line.slice(0, separatorIndex);
-            const value = line.slice(separatorIndex + 1).trim();
-
-            if (key === "GENERAL.DEVICE") {
-                current = {
-                    type: "",
-                    mac: "",
-                    ip4: [],
-                    ip6: []
-                };
-                detailsByDevice[value] = current;
-                continue;
-            }
-
-            if (current === null)
-                continue;
-
-            if (key === "GENERAL.TYPE") {
-                current.type = value;
-            } else if (key === "GENERAL.HWADDR") {
-                current.mac = value;
-            } else if (key.startsWith("IP4.ADDRESS")) {
-                if (value)
-                    current.ip4.push(value);
-            } else if (key.startsWith("IP6.ADDRESS")) {
-                if (value)
-                    current.ip6.push(value);
-            }
-        }
-
-        return detailsByDevice;
-    }
-
     function adapterList(_fingerprint, _nmDetailsByDevice) {
         const next = [];
         const seenNames = {};
@@ -313,9 +267,17 @@ Rectangle {
         return next;
     }
 
-    function refreshDetails() {
-        if (!detailsProcess.running)
-            detailsProcess.exec(["nmcli", "-t", "-f", "GENERAL.DEVICE,GENERAL.TYPE,GENERAL.HWADDR,IP4.ADDRESS,IP6.ADDRESS", "dev", "show"]);
+    function syncDetailsRequest() {
+        if (root.pollingActive === root.detailsAcquired)
+            return;
+
+        root.detailsAcquired = root.pollingActive;
+
+        if (root.detailsAcquired) {
+            NetworkState.acquireDetails();
+        } else {
+            NetworkState.releaseDetails();
+        }
     }
 
     function statusDescription() {
@@ -518,7 +480,7 @@ Rectangle {
                     Text {
                         width: parent.width
                         color: Colors.textPrimary
-                        font.family: "Pretendard"
+                        font.family: Typography.textFamily
                         font.pixelSize: 14
                         font.weight: Font.ExtraBold
                         text: "Network"
@@ -528,7 +490,7 @@ Rectangle {
                         width: parent.width
                         color: Colors.textMuted
                         elide: Text.ElideRight
-                        font.family: "Pretendard"
+                        font.family: Typography.textFamily
                         font.pixelSize: 12
                         font.weight: Font.DemiBold
                         text: root.statusDescription()
@@ -549,7 +511,7 @@ Rectangle {
 
                         anchors.centerIn: parent
                         color: root.statusTone()
-                        font.family: "Pretendard"
+                        font.family: Typography.textFamily
                         font.pixelSize: 11
                         font.weight: Font.ExtraBold
                         text: root.statusLabel()
@@ -571,7 +533,7 @@ Rectangle {
             Text {
                 width: parent.width
                 color: Colors.textMuted
-                font.family: "Pretendard"
+                font.family: Typography.textFamily
                 font.pixelSize: 12
                 font.weight: Font.DemiBold
                 leftPadding: 10
@@ -634,7 +596,7 @@ Rectangle {
 
                                 anchors.centerIn: parent
                                 color: root.adapterStatusTone(modelData)
-                                font.family: "Pretendard"
+                                font.family: Typography.textFamily
                                 font.pixelSize: 10
                                 font.weight: Font.ExtraBold
                                 text: root.adapterStatusLabel(modelData)
@@ -649,7 +611,7 @@ Rectangle {
                             anchors.verticalCenter: parent.verticalCenter
                             color: Colors.textPrimary
                             elide: Text.ElideRight
-                            font.family: "Pretendard"
+                            font.family: Typography.textFamily
                             font.pixelSize: 12
                             font.weight: Font.Bold
                             text: root.deviceName(modelData)
@@ -670,7 +632,7 @@ Rectangle {
                             Text {
                                 width: 36
                                 color: Colors.textMuted
-                                font.family: "Pretendard"
+                                font.family: Typography.textFamily
                                 font.pixelSize: 10
                                 font.weight: Font.ExtraBold
                                 horizontalAlignment: Text.AlignRight
@@ -681,7 +643,7 @@ Rectangle {
                                 width: parent.width - 43
                                 color: Colors.textSecondary
                                 elide: Text.ElideRight
-                                font.family: "Pretendard"
+                                font.family: Typography.textFamily
                                 font.pixelSize: 11
                                 font.weight: Font.DemiBold
                                 text: root.wifiApText(modelData)
@@ -697,7 +659,7 @@ Rectangle {
                             Text {
                                 width: 36
                                 color: Colors.textMuted
-                                font.family: "Pretendard"
+                                font.family: Typography.textFamily
                                 font.pixelSize: 10
                                 font.weight: Font.ExtraBold
                                 horizontalAlignment: Text.AlignRight
@@ -708,7 +670,7 @@ Rectangle {
                                 width: parent.width - 43
                                 color: Colors.textSecondary
                                 elide: Text.ElideRight
-                                font.family: "Pretendard"
+                                font.family: Typography.textFamily
                                 font.pixelSize: 11
                                 font.weight: Font.DemiBold
                                 text: "Tailscale"
@@ -723,7 +685,7 @@ Rectangle {
                             Text {
                                 width: 36
                                 color: Colors.textMuted
-                                font.family: "Pretendard"
+                                font.family: Typography.textFamily
                                 font.pixelSize: 10
                                 font.weight: Font.ExtraBold
                                 horizontalAlignment: Text.AlignRight
@@ -734,7 +696,7 @@ Rectangle {
                                 width: parent.width - 43
                                 color: Colors.textSecondary
                                 elide: Text.ElideRight
-                                font.family: "Pretendard"
+                                font.family: Typography.textFamily
                                 font.pixelSize: 11
                                 font.weight: Font.DemiBold
                                 text: root.ipAddressText(modelData)
@@ -750,7 +712,7 @@ Rectangle {
                             Text {
                                 width: 36
                                 color: Colors.textMuted
-                                font.family: "Pretendard"
+                                font.family: Typography.textFamily
                                 font.pixelSize: 10
                                 font.weight: Font.ExtraBold
                                 horizontalAlignment: Text.AlignRight
@@ -761,7 +723,7 @@ Rectangle {
                                 width: parent.width - 43
                                 color: Colors.textSecondary
                                 elide: Text.ElideRight
-                                font.family: "Pretendard"
+                                font.family: Typography.textFamily
                                 font.pixelSize: 11
                                 font.weight: Font.DemiBold
                                 text: root.macAddressText(modelData)
@@ -780,36 +742,12 @@ Rectangle {
         }
     }
 
-    Process {
-        id: detailsProcess
+    onPollingActiveChanged: root.syncDetailsRequest()
 
-        stdout: StdioCollector {
-            id: detailsStdout
-        }
+    Component.onCompleted: root.syncDetailsRequest()
 
-        stderr: StdioCollector {}
-
-        onExited: exitCode => {
-            if (exitCode === 0)
-                root.nmDetailsByDevice = root.parseNmcliDetails(detailsStdout.text);
-        }
-    }
-
-    Timer {
-        interval: 15000
-        repeat: true
-        running: true
-        triggeredOnStart: true
-
-        onTriggered: root.refreshDetails()
-    }
-
-    Timer {
-        interval: 30000
-        repeat: true
-        running: Networking.canCheckConnectivity
-        triggeredOnStart: true
-
-        onTriggered: Networking.checkConnectivity()
+    Component.onDestruction: {
+        if (root.detailsAcquired)
+            NetworkState.releaseDetails();
     }
 }

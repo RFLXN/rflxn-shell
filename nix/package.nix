@@ -14,11 +14,12 @@ let
     "theme"
   ];
 
-  relPath = path:
+  relPath =
+    path:
     let
       pathString = toString path;
     in
-      if pathString == root then "" else lib.removePrefix "${root}/" pathString;
+    if pathString == root then "" else lib.removePrefix "${root}/" pathString;
 
   topLevel = path: builtins.elemAt (lib.splitString "/" path) 0;
 in
@@ -28,11 +29,12 @@ stdenvNoCC.mkDerivation {
 
   src = lib.cleanSourceWith {
     src = ../.;
-    filter = path: _type:
+    filter =
+      path: _type:
       let
         rel = relPath path;
       in
-        rel == "" || builtins.elem (topLevel rel) includedTopLevel;
+      rel == "" || builtins.elem (topLevel rel) includedTopLevel;
   };
 
   dontConfigure = true;
@@ -42,13 +44,7 @@ stdenvNoCC.mkDerivation {
     runHook preInstall
 
     mkdir -p "$out/share/rflxn-shell"
-    cp -R \
-      ScreenShell.qml \
-      components \
-      config \
-      shell.qml \
-      theme \
-      "$out/share/rflxn-shell/"
+    cp -R ${lib.escapeShellArgs includedTopLevel} "$out/share/rflxn-shell/"
     cp ${layoutJson} "$out/share/rflxn-shell/layout.json"
 
     runHook postInstall

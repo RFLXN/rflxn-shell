@@ -2,7 +2,6 @@ import Quickshell
 import Quickshell.Hyprland
 import Quickshell.Io
 import QtQuick
-import "../../config"
 import "../state"
 
 IpcHandler {
@@ -16,56 +15,41 @@ IpcHandler {
     }
 
     function open(): string {
-        const screens = Quickshell.screens ?? [];
+        const focusedName = String(Hyprland.focusedMonitor?.name ?? "");
+        let screenName = GlobalMenu.isMenuAvailable("app-launcher", focusedName) ? focusedName : "";
 
-        for (let index = 0; index < screens.length; index++) {
-            const monitor = Hyprland.monitorFor(screens[index]);
-            const screenName = String(monitor?.name ?? "");
+        if (!screenName) {
+            const screens = Quickshell.screens ?? [];
 
-            if (screenName && Layouts.hasOverlay(Layouts.layoutForScreen(screenName), "app-launcher-menu")) {
-                GlobalMenu.openMenu("app-launcher", screenName);
-                return "launcher opened";
+            for (let index = 0; index < screens.length; index++) {
+                const screen = screens[index];
+                const monitorName = String(Hyprland.monitorFor(screen)?.name ?? "");
+                const candidateName = monitorName || String(screen?.name ?? "");
+
+                if (GlobalMenu.isMenuAvailable("app-launcher", candidateName)) {
+                    screenName = candidateName;
+                    break;
+                }
             }
         }
 
-        for (let index = 0; index < screens.length; index++) {
-            const monitor = Hyprland.monitorFor(screens[index]);
-            const screenName = String(monitor?.name ?? "");
+        if (!screenName || !GlobalMenu.openMenu("app-launcher", screenName))
+            return "launcher unavailable";
 
-            if (screenName) {
-                GlobalMenu.openMenu("app-launcher", screenName);
-                return "launcher opened";
-            }
-        }
-
-        GlobalMenu.openMenu("app-launcher", "");
         return "launcher opened";
     }
 
     function toggle(): string {
-        const screens = Quickshell.screens ?? [];
-
-        for (let index = 0; index < screens.length; index++) {
-            const monitor = Hyprland.monitorFor(screens[index]);
-            const screenName = String(monitor?.name ?? "");
-
-            if (screenName && Layouts.hasOverlay(Layouts.layoutForScreen(screenName), "app-launcher-menu")) {
-                GlobalMenu.toggleMenu("app-launcher", screenName);
-                return "launcher toggled";
-            }
+        if (GlobalMenu.activeMenu === "app-launcher") {
+            GlobalMenu.closeMenu("app-launcher");
+            return "launcher toggled";
         }
 
-        for (let index = 0; index < screens.length; index++) {
-            const monitor = Hyprland.monitorFor(screens[index]);
-            const screenName = String(monitor?.name ?? "");
+        const result = root.open();
 
-            if (screenName) {
-                GlobalMenu.toggleMenu("app-launcher", screenName);
-                return "launcher toggled";
-            }
-        }
+        if (result !== "launcher opened")
+            return result;
 
-        GlobalMenu.toggleMenu("app-launcher", "");
         return "launcher toggled";
     }
 }

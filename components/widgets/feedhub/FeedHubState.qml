@@ -8,8 +8,10 @@ Scope {
     id: root
 
     property int revision: 0
+    property int timeRevision: 0
     property var receivedAtById: ({})
-    readonly property var notifications: sortedNotifications(revision)
+    property var notificationList: []
+    readonly property var notifications: notificationList
     readonly property int notificationCount: notifications.length
     readonly property bool hasNotifications: notificationCount > 0
 
@@ -24,11 +26,9 @@ Scope {
 
         for (const notification of current)
             notification.dismiss();
-
-        bumpRevision();
     }
 
-    function formatNotificationTime(notificationId) {
+    function formatNotificationTime(notificationId, _timeRevision) {
         const timestamp = Number(receivedAtById[String(notificationId)] ?? Date.now());
         const elapsedSeconds = Math.max(0, Math.floor((Date.now() - timestamp) / 1000));
 
@@ -65,27 +65,33 @@ Scope {
         receivedAtById = next;
     }
 
-    function notificationSortTime(notification) {
-        const id = String(notification?.id ?? "");
-
-        return Number(receivedAtById[id] ?? 0);
-    }
-
-    function sortedNotifications(_revision) {
+    function syncNotifications() {
         const values = notificationServer.trackedNotifications.values ?? [];
+        const nextReceivedAtById = {};
         const next = [];
+        const now = Date.now();
 
         for (const notification of values) {
             if (!notification)
                 continue;
 
-            markReceived(notification);
+            const id = String(notification.id);
+            const receivedAt = Number(receivedAtById[id] ?? now);
+
+            nextReceivedAtById[id] = receivedAt;
             next.push(notification);
         }
 
-        next.sort((left, right) => notificationSortTime(right) - notificationSortTime(left) || Number(right.id) - Number(left.id));
+        next.sort((left, right) => {
+            const leftTime = Number(nextReceivedAtById[String(left.id)] ?? 0);
+            const rightTime = Number(nextReceivedAtById[String(right.id)] ?? 0);
 
-        return next;
+            return rightTime - leftTime || Number(right.id) - Number(left.id);
+        });
+
+        receivedAtById = nextReceivedAtById;
+        notificationList = next;
+        bumpRevision();
     }
 
     NotificationServer {
@@ -93,7 +99,7 @@ Scope {
 
         actionsSupported: true
         bodyHyperlinksSupported: false
-        bodyImagesSupported: true
+        bodyImagesSupported: false
         bodyMarkupSupported: false
         bodySupported: true
         imageSupported: true
@@ -103,7 +109,7 @@ Scope {
         onNotification: notification => {
             root.markReceived(notification);
             notification.tracked = true;
-            root.bumpRevision();
+            root.syncNotifications();
             root.notificationReceived(notification);
         }
     }
@@ -112,7 +118,17 @@ Scope {
         target: notificationServer.trackedNotifications
 
         function onValuesChanged() {
-            root.bumpRevision();
+            root.syncNotifications();
         }
     }
+
+    Timer {
+        interval: 30000
+        repeat: true
+        running: root.hasNotifications
+        triggeredOnStart: true
+        onTriggered: root.timeRevision += 1
+    }
+
+    Component.onCompleted: root.syncNotifications()
 }

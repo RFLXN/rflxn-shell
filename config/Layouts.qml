@@ -137,6 +137,31 @@ QtObject {
         return overlayConfig(layout, overlayId) !== null;
     }
 
+    function menuOverlayId(menuId) {
+        const id = String(menuId ?? "");
+
+        if (id === "app-launcher")
+            return "app-launcher-menu";
+
+        if (id === "calendar")
+            return "calendar-menu";
+
+        if (id === "feed-hub")
+            return "feed-hub-menu";
+
+        if (id === "system-controls")
+            return "system-controls-menu";
+
+        return "";
+    }
+
+    function hasMenuOverlay(screenName, menuId) {
+        const name = String(screenName ?? "");
+        const overlayId = menuOverlayId(menuId);
+
+        return name !== "" && overlayId !== "" && hasOverlay(layoutForScreen(name), overlayId);
+    }
+
     function slotWidgets(layout, slot) {
         const bar = barLayout(layout);
         const widgets = bar?.[slot] ?? [];
@@ -156,15 +181,70 @@ QtObject {
         return value === "datetime" || value === "feed-hub" || value === "system-controls" || value === "window-title" || value === "workspaces";
     }
 
+    function knownMenuId(value) {
+        return value === "app-launcher" || value === "calendar" || value === "feed-hub" || value === "system-controls";
+    }
+
     function knownOverlayId(value) {
         return value === "app-launcher-menu" || value === "calendar-menu" || value === "feed-hub-menu" || value === "global-menu-close-layer" || value === "notification-popups" || value === "system-controls-menu";
     }
 
-    function normalizeMenuConfig(value) {
-        if (!isRecord(value))
-            return {};
+    function normalizeEnumField(value, field, allowed, context) {
+        if (!Object.prototype.hasOwnProperty.call(value, field))
+            return;
 
-        return value;
+        if (!allowed.includes(value[field])) {
+            console.warn(`Invalid ${context}.${field}: ${value[field]}`);
+            delete value[field];
+        }
+    }
+
+    function normalizeNumberField(value, field, minimum, maximum, context) {
+        if (!Object.prototype.hasOwnProperty.call(value, field))
+            return;
+
+        const number = value[field];
+
+        if (typeof number !== "number" || !Number.isFinite(number) || number < minimum || number > maximum) {
+            console.warn(`Invalid ${context}.${field}: ${number}`);
+            delete value[field];
+        }
+    }
+
+    function normalizeBooleanField(value, field, context) {
+        if (!Object.prototype.hasOwnProperty.call(value, field))
+            return;
+
+        if (typeof value[field] !== "boolean") {
+            console.warn(`Invalid ${context}.${field}: ${value[field]}`);
+            delete value[field];
+        }
+    }
+
+    function normalizeMenuConfig(value, menuId) {
+        if (!isRecord(value)) {
+            console.warn(`Invalid layout menu config: ${menuId}`);
+            return {};
+        }
+
+        const normalized = Object.assign({}, value);
+        const context = `menu ${menuId}`;
+
+        normalizeEnumField(normalized, "direction", ["left", "right", "top", "bottom"], context);
+        normalizeEnumField(normalized, "alignment", ["left", "center", "right"], context);
+        normalizeNumberField(normalized, "menuWidth", 1, 16384, context);
+        normalizeNumberField(normalized, "menuHeight", 1, 16384, context);
+        normalizeNumberField(normalized, "menuMargin", 0, 4096, context);
+        normalizeNumberField(normalized, "menuTopOffset", -16384, 16384, context);
+        normalizeNumberField(normalized, "contentPadding", 0, 4096, context);
+        normalizeNumberField(normalized, "cornerRadius", 0, 4096, context);
+
+        if (Object.prototype.hasOwnProperty.call(normalized, "programs") && !isRecord(normalized.programs)) {
+            console.warn(`Invalid ${context}.programs`);
+            delete normalized.programs;
+        }
+
+        return normalized;
     }
 
     function normalizeMenuMap(value) {
@@ -173,8 +253,14 @@ QtObject {
 
         const menus = {};
 
-        for (const id of Object.keys(value))
-            menus[id] = normalizeMenuConfig(value[id]);
+        for (const id of Object.keys(value)) {
+            if (!knownMenuId(id)) {
+                console.warn(`Unknown layout menu: ${id}`);
+                continue;
+            }
+
+            menus[id] = normalizeMenuConfig(value[id], id);
+        }
 
         return menus;
     }
@@ -192,9 +278,22 @@ QtObject {
                 id
             };
 
-        return Object.assign({}, value, {
+        const normalized = Object.assign({}, value, {
                 id
             });
+        const context = `overlay ${id}`;
+
+        normalizeBooleanField(normalized, "enabled", context);
+
+        if (id === "notification-popups") {
+            normalizeEnumField(normalized, "position", ["top-left", "top-right", "bottom-left", "bottom-right"], context);
+            normalizeNumberField(normalized, "timeoutMs", 1, 86400000, context);
+            normalizeNumberField(normalized, "maxVisible", 1, 100, context);
+            normalizeNumberField(normalized, "margin", 0, 4096, context);
+            normalizeNumberField(normalized, "popupWidth", 1, 16384, context);
+        }
+
+        return normalized;
     }
 
     function normalizeOverlays(layout) {
@@ -240,7 +339,7 @@ QtObject {
     }
 
     function normalizeLayout(value) {
-        if (!isRecord(value) || typeof value.monitor !== "string") {
+        if (!isRecord(value) || typeof value.monitor !== "string" || value.monitor.trim() === "") {
             console.warn("Invalid layout definition", value);
             return null;
         }
@@ -248,7 +347,7 @@ QtObject {
         return {
             bar: normalizeWidgetSlots(value.bar ?? value.widgets),
             menus: normalizeMenuMap(value.menus),
-            monitor: value.monitor,
+            monitor: value.monitor.trim(),
             overlays: normalizeOverlays(value)
         };
     }
@@ -262,8 +361,12 @@ QtObject {
         for (const item of value) {
             const layout = normalizeLayout(item);
 
-            if (layout !== null)
+            if (layout !== null) {
+                if (Object.prototype.hasOwnProperty.call(next, layout.monitor))
+                    console.warn(`Duplicate layout monitor: ${layout.monitor}`);
+
                 next[layout.monitor] = layout;
+            }
         }
 
         return next;

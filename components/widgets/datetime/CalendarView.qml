@@ -1,10 +1,14 @@
+pragma ComponentBehavior: Bound
+
 import QtQuick
 import "../../../theme"
+import "../../state"
 
 Item {
     id: root
 
-    property date todayDate: new Date()
+    property bool followToday: true
+    readonly property date todayDate: ClockState.minuteNow
     property date viewDate: new Date(todayDate.getFullYear(), todayDate.getMonth(), 1)
     readonly property int todayDay: todayDate.getDate()
     readonly property int todayMonth: todayDate.getMonth()
@@ -40,6 +44,7 @@ Item {
 
     function moveMonth(delta) {
         root.viewDate = new Date(root.viewYear, root.viewMonth + delta, 1);
+        root.followToday = root.viewingCurrentMonth;
     }
 
     function monthTitle() {
@@ -51,17 +56,8 @@ Item {
     }
 
     function resetToToday() {
-        root.todayDate = new Date();
+        root.followToday = true;
         root.viewDate = root.currentMonthStart();
-    }
-
-    function updateDate() {
-        const wasViewingCurrentMonth = root.viewingCurrentMonth;
-
-        root.todayDate = new Date();
-
-        if (wasViewingCurrentMonth)
-            root.viewDate = root.currentMonthStart();
     }
 
     Column {
@@ -83,7 +79,7 @@ Item {
                 Text {
                     anchors.centerIn: parent
                     color: Colors.accent
-                    font.family: "Symbols Nerd Font Mono"
+                    font.family: Typography.iconFamily
                     font.pixelSize: 15
                     text: "\uf073"
                 }
@@ -98,7 +94,7 @@ Item {
                     width: parent.width
                     color: Colors.textPrimary
                     elide: Text.ElideRight
-                    font.family: "Pretendard"
+                    font.family: Typography.textFamily
                     font.pixelSize: 15
                     font.weight: Font.ExtraBold
                     text: root.monthTitle()
@@ -108,7 +104,7 @@ Item {
                     width: parent.width
                     color: Colors.textMuted
                     elide: Text.ElideRight
-                    font.family: "Pretendard"
+                    font.family: Typography.textFamily
                     font.pixelSize: 12
                     font.weight: Font.DemiBold
                     text: root.todayTitle()
@@ -130,7 +126,7 @@ Item {
                     Text {
                         anchors.centerIn: parent
                         color: previousArea.containsMouse ? Colors.textPrimary : Colors.textSecondary
-                        font.family: "Symbols Nerd Font Mono"
+                        font.family: Typography.iconFamily
                         font.pixelSize: 14
                         text: "\uf053"
                     }
@@ -157,7 +153,7 @@ Item {
                     Text {
                         anchors.centerIn: parent
                         color: root.viewingCurrentMonth ? Colors.accent : Colors.textSecondary
-                        font.family: "Pretendard"
+                        font.family: Typography.textFamily
                         font.pixelSize: 11
                         font.weight: Font.ExtraBold
                         text: "Today"
@@ -183,7 +179,7 @@ Item {
                     Text {
                         anchors.centerIn: parent
                         color: nextArea.containsMouse ? Colors.textPrimary : Colors.textSecondary
-                        font.family: "Symbols Nerd Font Mono"
+                        font.family: Typography.iconFamily
                         font.pixelSize: 14
                         text: "\uf054"
                     }
@@ -217,6 +213,8 @@ Item {
                 model: root.weekdayLabels
 
                 Item {
+                    id: weekdayCell
+
                     required property string modelData
 
                     width: (parent.width - 24) / 7
@@ -225,10 +223,10 @@ Item {
                     Text {
                         anchors.centerIn: parent
                         color: Colors.textMuted
-                        font.family: "Pretendard"
+                        font.family: Typography.textFamily
                         font.pixelSize: 11
                         font.weight: Font.ExtraBold
-                        text: modelData
+                        text: weekdayCell.modelData
                     }
                 }
             }
@@ -246,32 +244,30 @@ Item {
                 model: root.calendarDays
 
                 Rectangle {
+                    id: dayCell
+
                     required property var modelData
 
                     width: (dayGrid.width - 24) / 7
                     height: 34
-                    color: modelData.today ? Colors.accentSoft : "transparent"
+                    color: dayCell.modelData.today ? Colors.accentSoft : "transparent"
                     radius: 7
 
                     Text {
                         anchors.centerIn: parent
-                        color: modelData.today ? Colors.accent : modelData.inMonth ? Colors.textPrimary : Colors.textMuted
-                        font.family: "Pretendard"
+                        color: dayCell.modelData.today ? Colors.accent : dayCell.modelData.inMonth ? Colors.textPrimary : Colors.textMuted
+                        font.family: Typography.textFamily
                         font.pixelSize: 13
-                        font.weight: modelData.today ? Font.ExtraBold : Font.DemiBold
-                        text: modelData.day
+                        font.weight: dayCell.modelData.today ? Font.ExtraBold : Font.DemiBold
+                        text: dayCell.modelData.day
                     }
                 }
             }
         }
     }
 
-    Timer {
-        interval: 60000
-        repeat: true
-        running: true
-        triggeredOnStart: true
-
-        onTriggered: root.updateDate()
+    onTodayDateChanged: {
+        if (root.followToday)
+            root.viewDate = root.currentMonthStart();
     }
 }

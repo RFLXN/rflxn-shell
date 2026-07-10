@@ -147,8 +147,13 @@ When enabled, the module configures:
 ```nix
 home.packages = [
   services.rflxn-shell.quickshellPackage
-  <generated shell package>
+  (lib.hiPrio <generated shell package>)
+  pkgs.networkmanagerapplet
+  pkgs.pretendard
+  <Symbols Nerd Font package>
 ] ++ services.rflxn-shell.runtimePackages;
+
+fonts.fontconfig.enable = lib.mkDefault true;
 
 xdg.configFile."quickshell/rflxn-shell".source =
   "${package}/share/rflxn-shell";
@@ -156,11 +161,25 @@ xdg.configFile."quickshell/rflxn-shell".source =
 systemd.user.services.rflxn-shell = { ... };
 ```
 
-The generated service runs:
+`networkmanagerapplet` is an internal dependency of the default Network panel,
+which launches `nm-connection-editor`. The font packages are also installed
+internally so the QML's `Pretendard` and `Symbols Nerd Font Mono` families are
+available. These do not change the `runtimePackages` option or its default.
+
+The generated service uses the stable XDG config path rather than the changing
+store path:
 
 ```text
-quickshell --path ${package}/share/rflxn-shell/shell.qml --no-duplicate
+quickshell --path ${config.xdg.configHome}/quickshell/rflxn-shell/shell.qml --no-duplicate
 ```
+
+This keeps Quickshell's config identity stable, so commands such as
+`qs -c rflxn-shell ipc call launcher toggle` target the service instance. A
+package change is registered as a systemd restart trigger.
+
+The default Quickshell wrapper and all added Qt modules come from this flake's
+same pinned nixpkgs input. Consumers do not need to make their nixpkgs input
+follow this flake to avoid mixed Qt versions.
 
 ## `configs` Schema
 
@@ -271,5 +290,6 @@ Validate the flake package and module outputs:
 
 ```sh
 nix flake show --no-write-lock-file
+nix flake check --no-write-lock-file
 nix build --no-write-lock-file .#packages.x86_64-linux.default
 ```

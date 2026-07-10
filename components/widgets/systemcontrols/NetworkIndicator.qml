@@ -1,6 +1,7 @@
 import Quickshell.Networking
 import QtQuick
 import "../../../theme"
+import "../../state"
 
 Item {
     id: root
@@ -160,12 +161,5 @@ Item {
         sourceSize.height: root.iconPixelSize
     }
 
-    Timer {
-        interval: 30000
-        repeat: true
-        running: Networking.canCheckConnectivity
-        triggeredOnStart: true
-
-        onTriggered: Networking.checkConnectivity()
-    }
+    Component.onCompleted: NetworkState.ensureLoaded()
 }

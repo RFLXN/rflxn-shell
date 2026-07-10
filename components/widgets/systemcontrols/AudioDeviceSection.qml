@@ -1,3 +1,5 @@
+pragma ComponentBehavior: Bound
+
 import QtQuick
 import "../../../theme"
 
@@ -71,7 +73,7 @@ Item {
                 anchors.verticalCenter: parent.verticalCenter
                 width: 16
                 color: Colors.textMuted
-                font.family: "Symbols Nerd Font Mono"
+                font.family: Typography.iconFamily
                 font.pixelSize: 12
                 horizontalAlignment: Text.AlignHCenter
                 text: root.icon
@@ -80,7 +82,7 @@ Item {
             Text {
                 anchors.verticalCenter: parent.verticalCenter
                 color: Colors.textMuted
-                font.family: "Pretendard"
+                font.family: Typography.textFamily
                 font.pixelSize: 12
                 font.weight: Font.ExtraBold
                 text: root.title
@@ -113,7 +115,7 @@ Item {
                     width: parent.width - arrow.width - 8
                     color: root.hasDevice ? Colors.textPrimary : Colors.textMuted
                     elide: Text.ElideRight
-                    font.family: "Pretendard"
+                    font.family: Typography.textFamily
                     font.pixelSize: 12
                     font.weight: Font.Bold
                     text: root.hasDevice ? root.deviceLabel(root.currentNode) : root.emptyText
@@ -125,7 +127,7 @@ Item {
                     anchors.verticalCenter: parent.verticalCenter
                     width: 14
                     color: root.selectorOpen ? Colors.accent : Colors.textSecondary
-                    font.family: "Symbols Nerd Font Mono"
+                    font.family: Typography.iconFamily
                     font.pixelSize: 11
                     horizontalAlignment: Text.AlignHCenter
                     text: root.selectorOpen ? "\uf077" : "\uf078"
@@ -154,7 +156,7 @@ Item {
                     id: deviceRow
 
                     required property var modelData
-                    readonly property bool selected: root.nodeMatches(modelData, root.currentNode)
+                    readonly property bool selected: root.nodeMatches(deviceRow.modelData, root.currentNode)
 
                     width: parent.width
                     height: 28
@@ -176,7 +178,7 @@ Item {
                             anchors.verticalCenter: parent.verticalCenter
                             width: 14
                             color: deviceRow.selected ? Colors.accent : "transparent"
-                            font.family: "Symbols Nerd Font Mono"
+                            font.family: Typography.iconFamily
                             font.pixelSize: 11
                             horizontalAlignment: Text.AlignHCenter
                             text: "\uf00c"
@@ -187,9 +189,9 @@ Item {
                             width: parent.width - 22
                             color: deviceRow.selected ? Colors.textPrimary : Colors.textSecondary
                             elide: Text.ElideRight
-                            font.family: "Pretendard"
+                            font.family: Typography.textFamily
                             font.pixelSize: 12
-                            text: root.deviceLabel(modelData)
+                            text: root.deviceLabel(deviceRow.modelData)
                         }
                     }
 
@@ -199,7 +201,7 @@ Item {
                         anchors.fill: parent
                         cursorShape: Qt.PointingHandCursor
                         hoverEnabled: true
-                        onClicked: root.deviceSelected(modelData)
+                        onClicked: root.deviceSelected(deviceRow.modelData)
                     }
                 }
             }
@@ -282,7 +284,7 @@ Item {
                 anchors.verticalCenter: parent.verticalCenter
                 width: 42
                 color: root.muted ? Colors.critical : Colors.textSecondary
-                font.family: "Pretendard"
+                font.family: Typography.textFamily
                 font.pixelSize: 12
                 font.weight: Font.ExtraBold
                 horizontalAlignment: Text.AlignRight
@@ -301,7 +303,7 @@ Item {
                 Text {
                     anchors.centerIn: parent
                     color: root.muted ? Colors.critical : (muteArea.containsMouse ? Colors.textPrimary : Colors.textSecondary)
-                    font.family: "Symbols Nerd Font Mono"
+                    font.family: Typography.iconFamily
                     font.pixelSize: 13
                     text: root.muted ? root.mutedIcon : root.unmutedIcon
                 }

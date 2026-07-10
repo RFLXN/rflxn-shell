@@ -10,6 +10,7 @@ FocusScope {
 
     property bool active: false
     property int activeIndex: -1
+    property bool componentReady: false
     property int maxResults: 16
     property string query: ""
     property var results: []
@@ -188,12 +189,16 @@ FocusScope {
         root.activeIndex = resetActive ? clampActiveIndex(0, root.results) : clampActiveIndex(root.activeIndex, root.results);
     }
 
-    function resetForOpen() {
+    function resetContent() {
         root.query = "";
         searchInput.text = "";
         root.pointerHoverSuppressed = false;
         root.pointerPositionKnown = false;
         refreshResults(true);
+    }
+
+    function resetForOpen() {
+        resetContent();
         focusTimer.restart();
     }
 
@@ -296,7 +301,7 @@ FocusScope {
 
     function completeLaunch() {
         clearPendingLaunch();
-        root.resetForOpen();
+        resetContent();
         GlobalMenu.closeMenu("app-launcher");
     }
 
@@ -329,8 +334,14 @@ FocusScope {
     }
 
     onActiveChanged: {
-        if (active)
+        if (!componentReady)
+            return;
+
+        if (active) {
             resetForOpen();
+        } else {
+            focusTimer.stop();
+        }
     }
 
     onAppsFingerprintChanged: refreshResults(false)
@@ -364,6 +375,9 @@ FocusScope {
         repeat: false
 
         onTriggered: {
+            if (!root.active)
+                return;
+
             root.forceActiveFocus();
             searchInput.forceActiveFocus();
         }
@@ -394,7 +408,7 @@ FocusScope {
 
                 color: Colors.textMuted
                 elide: Text.ElideRight
-                font.family: "Pretendard"
+                font.family: Typography.textFamily
                 font.pixelSize: 15
                 text: "Search applications"
                 visible: searchInput.text.length === 0
@@ -412,7 +426,7 @@ FocusScope {
                 clip: true
                 color: Colors.textPrimary
                 focus: true
-                font.family: "Pretendard"
+                font.family: Typography.textFamily
                 font.pixelSize: 15
                 selectByMouse: true
                 selectionColor: Colors.accentSoft
@@ -454,168 +468,148 @@ FocusScope {
             }
         }
 
-        Flickable {
+        ListView {
             id: resultsView
 
             width: parent.width
             height: Math.max(0, parent.height - searchBox.height - parent.spacing)
             boundsBehavior: Flickable.StopAtBounds
+            bottomMargin: 4
+            cacheBuffer: 116
             clip: true
-            contentHeight: resultsColumn.height + 8
-            contentWidth: width
+            model: root.results
+            reuseItems: true
+            spacing: 4
+            topMargin: 4
 
             function ensureActiveVisible() {
-                if (root.activeIndex < 0)
-                    return;
+                if (root.activeIndex >= 0)
+                    positionViewAtIndex(root.activeIndex, ListView.Contain);
+            }
 
-                const rowTop = 4 + root.activeIndex * (58 + resultsColumn.spacing);
-                const rowBottom = rowTop + 58;
-                const top = contentY;
-                const bottom = contentY + height;
+            delegate: Rectangle {
+                id: row
 
-                if (rowTop < top + 8) {
-                    contentY = Math.max(0, rowTop - 8);
-                } else if (rowBottom > bottom - 8) {
-                    contentY = Math.min(Math.max(0, contentHeight - height), rowBottom - height + 8);
+                required property int index
+                required property var modelData
+
+                readonly property bool selected: index === root.activeIndex
+                readonly property string label: root.appLabel(modelData)
+                readonly property string description: root.appDescription(modelData)
+                readonly property string iconName: String(modelData?.icon ?? "")
+
+                width: resultsView.width
+                height: 58
+                color: selected ? Colors.widgetBgHover : Colors.widgetBg
+                radius: 18
+
+                Behavior on color {
+                    ColorAnimation {
+                        duration: 160
+                        easing.type: Easing.OutQuad
+                    }
+                }
+
+                Row {
+                    anchors {
+                        fill: parent
+                        leftMargin: 10
+                        rightMargin: 10
+                    }
+
+                    spacing: 12
+
+                    Rectangle {
+                        anchors.verticalCenter: parent.verticalCenter
+                        width: 48
+                        height: 48
+                        color: "transparent"
+                        radius: 14
+
+                        IconImage {
+                            id: appIcon
+
+                            anchors.centerIn: parent
+                            width: 34
+                            height: 34
+                            asynchronous: true
+                            implicitSize: 34
+                            mipmap: true
+                            source: row.iconName ? `image://icon/${row.iconName}` : ""
+                            visible: source !== "" && status === Image.Ready
+                        }
+
+                        Text {
+                            anchors.centerIn: parent
+                            color: Colors.textPrimary
+                            font.family: Typography.textFamily
+                            font.pixelSize: 22
+                            font.weight: Font.Bold
+                            text: row.label.charAt(0).toUpperCase()
+                            visible: !appIcon.visible
+                        }
+                    }
+
+                    Column {
+                        anchors.verticalCenter: parent.verticalCenter
+                        width: parent.width - 60
+                        spacing: 2
+
+                        Text {
+                            width: parent.width
+                            color: Colors.textPrimary
+                            elide: Text.ElideRight
+                            font.family: Typography.textFamily
+                            font.pixelSize: 15
+                            font.weight: Font.DemiBold
+                            text: row.label
+                        }
+
+                        Text {
+                            width: parent.width
+                            color: Colors.textMuted
+                            elide: Text.ElideRight
+                            font.family: Typography.textFamily
+                            font.pixelSize: 13
+                            text: row.description
+                            visible: row.description.length > 0
+                        }
+                    }
+                }
+
+                MouseArea {
+                    id: pointerArea
+
+                    anchors.fill: parent
+                    cursorShape: Qt.PointingHandCursor
+                    hoverEnabled: true
+                    onClicked: root.launchApplication(row.modelData)
+                    onEntered: {
+                        if (root.shouldActivatePointerHover(pointerArea, pointerArea.mouseX, pointerArea.mouseY))
+                            root.activeIndex = row.index;
+                    }
+                    onPositionChanged: mouse => {
+                        if (root.shouldActivatePointerHover(pointerArea, mouse.x, mouse.y))
+                            root.activeIndex = row.index;
+                    }
                 }
             }
 
-            Column {
-                id: resultsColumn
-
+            header: Item {
                 width: resultsView.width
-                spacing: 4
-                y: 4
+                height: root.results.length === 0 ? 180 : 0
 
-                Repeater {
-                    model: root.results
-
-                    Rectangle {
-                        id: row
-
-                        required property int index
-                        required property var modelData
-
-                        readonly property bool selected: index === root.activeIndex
-                        readonly property string label: root.appLabel(modelData)
-                        readonly property string description: root.appDescription(modelData)
-                        readonly property string iconName: String(modelData?.icon ?? "")
-
-                        width: resultsColumn.width
-                        height: 58
-                        color: selected ? Colors.widgetBgHover : Colors.widgetBg
-                        radius: 18
-
-                        Behavior on color {
-                            ColorAnimation {
-                                duration: 160
-                                easing.type: Easing.OutQuad
-                            }
-                        }
-
-                        Row {
-                            anchors {
-                                fill: parent
-                                leftMargin: 10
-                                rightMargin: 10
-                            }
-
-                            spacing: 12
-
-                            Rectangle {
-                                anchors.verticalCenter: parent.verticalCenter
-                                width: 48
-                                height: 48
-                                color: "transparent"
-                                radius: 14
-
-                                IconImage {
-                                    id: appIcon
-
-                                    anchors.centerIn: parent
-                                    width: 34
-                                    height: 34
-                                    asynchronous: true
-                                    implicitSize: 34
-                                    mipmap: true
-                                    source: row.iconName ? `image://icon/${row.iconName}` : ""
-                                    visible: source !== "" && status === Image.Ready
-                                }
-
-                                Text {
-                                    anchors.centerIn: parent
-                                    color: Colors.textPrimary
-                                    font.family: "Pretendard"
-                                    font.pixelSize: 22
-                                    font.weight: Font.Bold
-                                    text: row.label.charAt(0).toUpperCase()
-                                    visible: !appIcon.visible
-                                }
-                            }
-
-                            Column {
-                                anchors.verticalCenter: parent.verticalCenter
-                                width: parent.width - 60
-                                spacing: 2
-
-                                Text {
-                                    width: parent.width
-                                    color: Colors.textPrimary
-                                    elide: Text.ElideRight
-                                    font.family: "Pretendard"
-                                    font.pixelSize: 15
-                                    font.weight: Font.DemiBold
-                                    text: row.label
-                                }
-
-                                Text {
-                                    width: parent.width
-                                    color: Colors.textMuted
-                                    elide: Text.ElideRight
-                                    font.family: "Pretendard"
-                                    font.pixelSize: 13
-                                    text: row.description
-                                    visible: row.description.length > 0
-                                }
-                            }
-                        }
-
-                        MouseArea {
-                            id: pointerArea
-
-                            anchors.fill: parent
-                            cursorShape: Qt.PointingHandCursor
-                            hoverEnabled: true
-                            onClicked: root.launchApplication(row.modelData)
-                            onEntered: {
-                                if (root.shouldActivatePointerHover(pointerArea, pointerArea.mouseX, pointerArea.mouseY))
-                                    root.activeIndex = row.index;
-                            }
-                            onPositionChanged: mouse => {
-                                if (root.shouldActivatePointerHover(pointerArea, mouse.x, mouse.y))
-                                    root.activeIndex = row.index;
-                            }
-                        }
-                    }
-                }
-
-                Item {
-                    width: parent.width
-                    height: root.results.length === 0 ? 180 : 0
-                    visible: root.results.length === 0
-
-                    Text {
-                        anchors.centerIn: parent
-                        color: Colors.textMuted
-                        font.family: "Pretendard"
-                        font.pixelSize: 14
-                        text: "No applications found"
-                    }
+                Text {
+                    anchors.centerIn: parent
+                    color: Colors.textMuted
+                    font.family: Typography.textFamily
+                    font.pixelSize: 14
+                    text: "No applications found"
                 }
             }
 
             onHeightChanged: ensureActiveVisible()
-            onContentHeightChanged: ensureActiveVisible()
+
             Connections {
                 target: root
 
@@ -624,12 +618,20 @@ FocusScope {
                 }
 
                 function onResultsChanged() {
-                    resultsView.contentY = 0;
+                    resultsView.positionViewAtBeginning();
                     resultsView.ensureActiveVisible();
                 }
             }
         }
     }
 
-    Component.onCompleted: refreshResults(true)
+    Component.onCompleted: {
+        componentReady = true;
+
+        if (active) {
+            resetForOpen();
+        } else {
+            refreshResults(true);
+        }
+    }
 }

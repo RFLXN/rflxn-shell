@@ -1,3 +1,5 @@
+pragma ComponentBehavior: Bound
+
 import QtQuick
 import "../../menu"
 
@@ -12,8 +14,13 @@ SideMenu {
     menuMargin: 0
     menuWidth: 640
 
-    AppLauncher {
+    Loader {
         anchors.fill: parent
-        active: root.menuOpen
+        active: root.mounted
+        sourceComponent: Component {
+            AppLauncher {
+                active: root.menuOpen
+            }
+        }
     }
 }

@@ -1,3 +1,5 @@
+pragma ComponentBehavior: Bound
+
 import Quickshell.Services.SystemTray
 import QtQuick
 import "../../../theme"
@@ -41,7 +43,7 @@ SideMenu {
                 spacing: 4
 
                 Repeater {
-                    model: SystemTray.items.values
+                    model: root.mounted ? SystemTray.items.values : []
 
                     FeedHubTrayItem {
                         required property var modelData
@@ -83,7 +85,7 @@ SideMenu {
                 Text {
                     anchors.centerIn: parent
                     color: dismissArea.containsMouse ? Colors.textPrimary : Colors.textSecondary
-                    font.family: "Pretendard"
+                    font.family: Typography.textFamily
                     font.pixelSize: 12
                     font.weight: Font.Bold
                     text: "Dismiss All"
@@ -100,35 +102,26 @@ SideMenu {
             }
         }
 
-        Flickable {
-            id: notificationFlickable
+        ListView {
+            id: notificationList
 
-            width: parent.width
+            x: 8
+            width: Math.max(0, parent.width - 16)
             height: Math.max(0, parent.height - trayFlickable.height - 1 - (FeedHubState.hasNotifications ? 42 : 0))
             boundsBehavior: Flickable.StopAtBounds
+            bottomMargin: 8
+            cacheBuffer: 64
             clip: true
-            contentHeight: notificationColumn.height + 16
-            contentWidth: width
+            model: root.mounted ? FeedHubState.notifications : []
+            spacing: 6
+            topMargin: 8
             visible: FeedHubState.hasNotifications
 
-            Column {
-                id: notificationColumn
+            delegate: FeedHubNotificationItem {
+                required property var modelData
 
-                width: notificationFlickable.width - 16
-                x: 8
-                y: 8
-                spacing: 6
-
-                Repeater {
-                    model: FeedHubState.notifications
-
-                    FeedHubNotificationItem {
-                        required property var modelData
-
-                        width: notificationColumn.width
-                        notification: modelData
-                    }
-                }
+                width: ListView.view.width
+                notification: modelData
             }
         }
 
@@ -140,7 +133,7 @@ SideMenu {
             Text {
                 anchors.centerIn: parent
                 color: Colors.textMuted
-                font.family: "Pretendard"
+                font.family: Typography.textFamily
                 font.pixelSize: 13
                 font.weight: Font.Bold
                 text: "No notifications"

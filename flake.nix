@@ -11,7 +11,12 @@
   };
 
   outputs =
-    { self, nixpkgs, quickshell, ... }:
+    {
+      self,
+      nixpkgs,
+      quickshell,
+      ...
+    }:
     let
       systems = [
         "x86_64-linux"
@@ -19,8 +24,8 @@
       ];
 
       forAllSystems = nixpkgs.lib.genAttrs systems;
-      mkQtModules = pkgs:
-        with pkgs.qt6; [
+      mkQtModules =
+        pkgs: with pkgs.qt6; [
           qtsvg
           qtimageformats
           qtmultimedia
@@ -42,6 +47,21 @@
         }
       );
 
+      checks = forAllSystems (
+        system:
+        let
+          pkgs = nixpkgs.legacyPackages.${system};
+        in
+        {
+          module-contract = import ./nix/module-check.nix {
+            inherit pkgs;
+            defaultPackage = self.packages.${system}.default;
+            homeManagerModule = self.homeManagerModules.default;
+            namedPackage = self.packages.${system}.rflxn-shell;
+          };
+        }
+      );
+
       devShells = forAllSystems (
         system:
         let
@@ -51,26 +71,24 @@
         in
         {
           default = pkgs.mkShell {
-            packages =
-              with pkgs;
-              [
-                quickshellPkg
+            packages = with pkgs; [
+              quickshellPkg
 
-                # QML language server and useful Qt inspection tools.
-                qt6.qtdeclarative
-                qt6.qttools
+              # QML language server and useful Qt inspection tools.
+              qt6.qtdeclarative
+              qt6.qttools
 
-                # Hyprland and Wayland helpers commonly used while iterating on a shell.
-                hyprland
-                grim
-                slurp
-                wl-clipboard
+              # Hyprland and Wayland helpers commonly used while iterating on a shell.
+              hyprland
+              grim
+              slurp
+              wl-clipboard
 
-                inotify-tools
-                jq
-                libnotify
-                socat
-              ];
+              inotify-tools
+              jq
+              libnotify
+              socat
+            ];
 
             shellHook = ''
               echo "Quickshell dev shell"
@@ -85,7 +103,7 @@
 
       homeManagerModules = rec {
         rflxn-shell = import ./nix/home-manager-module.nix {
-          inherit quickshell;
+          inherit nixpkgs quickshell;
         };
 
         default = rflxn-shell;

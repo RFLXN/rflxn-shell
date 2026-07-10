@@ -1,17 +1,15 @@
 import Quickshell
 import Quickshell.Hyprland
-import Quickshell.Io
 import QtQml.Models
 import QtQuick
+import "../../state"
 import "../../../theme"
 
 Item {
     id: root
 
     property var screen
-    property bool refreshPending: false
     property bool focusedHovering: false
-    property var urgentAddresses: ({})
     property var workspaceItems: []
     property int itemSize: Metrics.widgetHeight
     property int itemSpacing: Metrics.globalYSpacing
@@ -29,16 +27,6 @@ Item {
 
     function workspaceWidth(workspace) {
         return Math.max(1, workspace?.windows?.length ?? 0) * itemSize;
-    }
-
-    function queueRefresh() {
-        if (snapshotProcess.running) {
-            root.refreshPending = true;
-            return;
-        }
-
-        root.refreshPending = false;
-        snapshotProcess.exec(snapshotProcess.command);
     }
 
     function isNormalWorkspace(workspace) {
@@ -63,89 +51,6 @@ Item {
         const entry = DesktopEntries.heuristicLookup(id);
 
         return entry?.icon ?? "";
-    }
-
-    function normalizeAddress(address) {
-        const text = String(address ?? "").trim().toLowerCase();
-        const match = text.match(/(?:0x)?[0-9a-f]{8,}/);
-
-        if (!match)
-            return "";
-
-        const value = match[0];
-
-        return value.startsWith("0x") ? value : `0x${value}`;
-    }
-
-    function eventAddress(event) {
-        const candidates = [event?.data, event?.value, event?.payload, event?.body, event?.args];
-
-        for (const candidate of candidates) {
-            if (Array.isArray(candidate)) {
-                for (const value of candidate) {
-                    const address = normalizeAddress(value);
-
-                    if (address)
-                        return address;
-                }
-
-                continue;
-            }
-
-            const address = normalizeAddress(candidate);
-
-            if (address)
-                return address;
-        }
-
-        return "";
-    }
-
-    function hasUrgentAddress(address) {
-        return Boolean(root.urgentAddresses[normalizeAddress(address)]);
-    }
-
-    function urgentAddressMapsEqual(left, right) {
-        const leftKeys = Object.keys(left).sort();
-        const rightKeys = Object.keys(right).sort();
-
-        if (leftKeys.length !== rightKeys.length)
-            return false;
-
-        for (let index = 0; index < leftKeys.length; index++) {
-            if (leftKeys[index] !== rightKeys[index])
-                return false;
-        }
-
-        return true;
-    }
-
-    function copyUrgentAddresses() {
-        const next = {};
-
-        for (const address of Object.keys(root.urgentAddresses))
-            next[address] = true;
-
-        return next;
-    }
-
-    function setUrgentAddresses(next) {
-        if (!urgentAddressMapsEqual(root.urgentAddresses, next))
-            root.urgentAddresses = next;
-    }
-
-    function addUrgentAddress(address) {
-        const normalized = normalizeAddress(address);
-
-        if (!normalized)
-            return false;
-
-        const next = copyUrgentAddresses();
-
-        next[normalized] = true;
-        setUrgentAddresses(next);
-
-        return true;
     }
 
     function workspaceEntry(workspace) {
@@ -204,12 +109,8 @@ Item {
         root.workspaceItems = nextItems;
     }
 
-    function parseSnapshot(text) {
-        if (!text.trim())
-            return [];
-
+    function workspaceItemsForSnapshot(snapshot) {
         try {
-            const snapshot = JSON.parse(text);
             const monitor = (snapshot.monitors ?? []).find(candidate => candidate.name === root.monitorName);
 
             if (!monitor)
@@ -219,21 +120,7 @@ Item {
             const activeWindow = snapshot.activewindow ?? {};
             const focusedWorkspaceId = Number(activeWindow.workspace?.id ?? activeWorkspaceId);
             const focusedAddress = String(activeWindow.address ?? "");
-            const activeAddresses = {};
-            const nextUrgentAddresses = copyUrgentAddresses();
             const clients = (snapshot.clients ?? []).filter(isVisibleClient).filter(client => Number(client.monitor) === Number(monitor.id));
-
-            for (const client of clients) {
-                const address = normalizeAddress(client.address);
-
-                if (!address)
-                    continue;
-
-                activeAddresses[address] = true;
-
-                if (client.urgent === true)
-                    nextUrgentAddresses[address] = true;
-            }
 
             const items = (snapshot.workspaces ?? []).filter(isNormalWorkspace).filter(workspace => workspace.monitor === root.monitorName).sort((left, right) => Number(left.id) - Number(right.id)).map(workspace => {
                 const focused = Number(workspace.id) === focusedWorkspaceId;
@@ -243,14 +130,9 @@ Item {
                             icon: clientIcon(client),
                             label: clientLabel(client),
                             title: String(client.title || client.class || ""),
-                            urgent: hasUrgentAddress(client.address) || client.urgent === true
+                            urgent: HyprlandState.hasUrgentAddress(client.address) || client.urgent === true
                         }));
                 const urgent = !focused && windows.some(window => window.urgent);
-
-                if (focused) {
-                    for (const window of windows)
-                        delete nextUrgentAddresses[normalizeAddress(window.address)];
-                }
 
                 return {
                     active: Number(workspace.id) === activeWorkspaceId,
@@ -262,18 +144,15 @@ Item {
                 };
             });
 
-            for (const address of Object.keys(nextUrgentAddresses)) {
-                if (!activeAddresses[address])
-                    delete nextUrgentAddresses[address];
-            }
-
-            setUrgentAddresses(nextUrgentAddresses);
-
             return items;
         } catch (error) {
-            console.error("Failed to parse Hyprland workspace snapshot", error);
+            console.error("Failed to build Hyprland workspace model", error);
             return root.workspaceItems;
         }
+    }
+
+    function syncSharedSnapshot() {
+        root.syncWorkspaceModel(root.workspaceItemsForSnapshot(HyprlandState.snapshot));
     }
 
     ListModel {
@@ -357,58 +236,14 @@ Item {
     }
 
     Connections {
-        target: Hyprland
+        target: HyprlandState
 
-        function onActiveToplevelChanged() {
-            root.queueRefresh();
-        }
-
-        function onFocusedWorkspaceChanged() {
-            root.queueRefresh();
-        }
-
-        function onRawEvent(event) {
-            const name = event.name;
-
-            if (name === "urgent")
-                root.addUrgentAddress(root.eventAddress(event));
-
-            if (name === "workspace" || name === "focusedmon" || name === "createworkspace" || name === "destroyworkspace" || name === "moveworkspace" || name === "openwindow" || name === "closewindow" || name === "movewindow" || name === "activewindow" || name === "urgent" || name === "changefloatingmode" || name === "fullscreen")
-                refreshDebounce.restart();
+        function onSnapshotChanged() {
+            root.syncSharedSnapshot();
         }
     }
 
-    Timer {
-        id: refreshDebounce
+    onMonitorNameChanged: root.syncSharedSnapshot()
 
-        interval: 60
-        repeat: false
-
-        onTriggered: root.queueRefresh()
-    }
-
-    Process {
-        id: snapshotProcess
-
-        command: ["bash", "-lc", "printf '{\"monitors\":'; hyprctl -j monitors; printf ',\"workspaces\":'; hyprctl -j workspaces; printf ',\"clients\":'; hyprctl -j clients; printf ',\"activewindow\":'; hyprctl -j activewindow; printf '}'"]
-        stderr: StdioCollector {
-            id: snapshotStderr
-        }
-        stdout: StdioCollector {
-            id: snapshotStdout
-        }
-
-        onExited: (exitCode, exitStatus) => {
-            if (exitCode === 0) {
-                root.syncWorkspaceModel(root.parseSnapshot(snapshotStdout.text));
-            } else {
-                console.error("Failed to fetch Hyprland workspace snapshot", exitCode, snapshotStderr.text);
-            }
-
-            if (root.refreshPending)
-                root.queueRefresh();
-        }
-    }
-
-    Component.onCompleted: root.queueRefresh()
+    Component.onCompleted: root.syncSharedSnapshot()
 }
