@@ -9,6 +9,9 @@ import "../../../theme"
 SideMenu {
     id: root
 
+    // Temporary design preview. Set this to false to restore hardware-only visibility.
+    readonly property bool brightnessPreviewEnabled: true
+    readonly property bool brightnessAvailable: brightnessPreviewEnabled || BrightnessState.available
     readonly property var defaultPrograms: ({
             volume: {
                 command: "pwvucontrol",
@@ -421,6 +424,20 @@ SideMenu {
                                     loadedVolumePanel.closeSelectors();
                                 }
                             }
+                        }
+                    }
+                }
+
+                Loader {
+                    id: brightnessPanelLoader
+
+                    active: root.mounted && root.brightnessAvailable
+                    width: parent.width
+                    sourceComponent: Component {
+                        SystemControlsBrightnessPanel {
+                            width: brightnessPanelLoader.width
+                            pollingActive: root.menuOpen
+                            previewMode: root.brightnessPreviewEnabled && !BrightnessState.available
                         }
                     }
                 }

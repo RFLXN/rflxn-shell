@@ -148,6 +148,7 @@ When enabled, the module configures:
 home.packages = [
   services.rflxn-shell.quickshellPackage
   (lib.hiPrio <generated shell package>)
+  pkgs.brightnessctl
   pkgs.networkmanagerapplet
   pkgs.pretendard
   <Symbols Nerd Font package>
@@ -161,10 +162,12 @@ xdg.configFile."quickshell/rflxn-shell".source =
 systemd.user.services.rflxn-shell = { ... };
 ```
 
-`networkmanagerapplet` is an internal dependency of the default Network panel,
-which launches `nm-connection-editor`. The font packages are also installed
-internally so the QML's `Pretendard` and `Symbols Nerd Font Mono` families are
-available. These do not change the `runtimePackages` option or its default.
+`brightnessctl` is an internal dependency of the built-in-display brightness
+panel, and `networkmanagerapplet` is an internal dependency of the default
+Network panel, which launches `nm-connection-editor`. The font packages are
+also installed internally so the QML's `Pretendard` and `Symbols Nerd Font
+Mono` families are available. These do not change the `runtimePackages` option
+or its default.
 
 The generated service uses the stable XDG config path rather than the changing
 store path:

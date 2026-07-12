@@ -102,8 +102,12 @@ assert
   map (package: package.pname) moduleOptions.runtimePackages.default == expectedRuntimePackageNames;
 assert builtins.length generatedPackages == 1;
 assert moduleConfig.fonts.fontconfig.enable;
+assert builtins.elem (toString pkgs.brightnessctl) homePackagePaths;
 assert builtins.elem (toString pkgs.networkmanagerapplet) homePackagePaths;
 assert builtins.elem (toString pkgs.pretendard) homePackagePaths;
+assert lib.hasInfix (builtins.unsafeDiscardStringContext "${pkgs.brightnessctl}/bin") (
+  builtins.head service.Service.Environment
+);
 assert lib.hasInfix (builtins.unsafeDiscardStringContext "${pkgs.networkmanagerapplet}/bin") (
   builtins.head service.Service.Environment
 );
@@ -113,7 +117,10 @@ assert lib.hasPrefix "${renamedQuickshell}/bin/quickshell " customQuickshellExec
 assert service.Unit.X-Restart-Triggers == [ generatedPackage ];
 pkgs.runCommand "rflxn-shell-module-contract" { nativeBuildInputs = [ pkgs.jq ]; } ''
   test -f ${generatedPackage}/share/rflxn-shell/shell.qml
+  test -f ${generatedPackage}/share/rflxn-shell/components/state/BrightnessState.qml
   test -f ${generatedPackage}/share/rflxn-shell/components/state/HyprlandState.qml
+  test -f ${generatedPackage}/share/rflxn-shell/components/widgets/systemcontrols/SystemControlsBrightnessPanel.qml
+  test -x ${pkgs.brightnessctl}/bin/brightnessctl
   test -x ${pkgs.networkmanagerapplet}/bin/nm-connection-editor
   test -x ${renamedQuickshell}/bin/quickshell
   jq -e '.layouts[0].monitor == "MODULE-CHECK"' \

@@ -72,6 +72,7 @@
         {
           default = pkgs.mkShell {
             packages = with pkgs; [
+              brightnessctl
               quickshellPkg
 
               # QML language server and useful Qt inspection tools.

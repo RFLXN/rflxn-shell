@@ -39,6 +39,7 @@ let
     uwsm
   ];
   requiredRuntimePackages = with pkgs; [
+    brightnessctl
     networkmanagerapplet
   ];
   symbolsFont = lib.attrByPath [ "nerd-fonts" "symbols-only" ] (pkgs.nerdfonts.override {

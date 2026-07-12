@@ -6,6 +6,7 @@ ProgressRing 1.0 ProgressRing.qml
 SystemControlsNetworkPanel 1.0 SystemControlsNetworkPanel.qml
 SystemControls 1.0 SystemControls.qml
 SystemControlsBluetoothPanel 1.0 SystemControlsBluetoothPanel.qml
+SystemControlsBrightnessPanel 1.0 SystemControlsBrightnessPanel.qml
 SystemControlsMenu 1.0 SystemControlsMenu.qml
 SystemControlsVolumePanel 1.0 SystemControlsVolumePanel.qml
 VolumeIndicator 1.0 VolumeIndicator.qml
