@@ -119,7 +119,9 @@ pkgs.runCommand "rflxn-shell-module-contract" { nativeBuildInputs = [ pkgs.jq ];
   test -f ${generatedPackage}/share/rflxn-shell/shell.qml
   test -f ${generatedPackage}/share/rflxn-shell/components/state/BrightnessState.qml
   test -f ${generatedPackage}/share/rflxn-shell/components/state/HyprlandState.qml
+  test -f ${generatedPackage}/share/rflxn-shell/components/state/SyncthingState.qml
   test -f ${generatedPackage}/share/rflxn-shell/components/widgets/systemcontrols/SystemControlsBrightnessPanel.qml
+  test -f ${generatedPackage}/share/rflxn-shell/components/widgets/systemcontrols/SystemControlsSyncthingPanel.qml
   test -x ${pkgs.brightnessctl}/bin/brightnessctl
   test -x ${pkgs.networkmanagerapplet}/bin/nm-connection-editor
   test -x ${renamedQuickshell}/bin/quickshell

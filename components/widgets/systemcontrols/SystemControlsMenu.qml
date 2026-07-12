@@ -30,6 +30,7 @@ SideMenu {
     property string confirmationAction: ""
     property string confirmationDisplayAction: ""
     property string lastPowerAction: ""
+    property bool syncthingMonitoringAcquired: false
     signal panelResetRequested()
 
     menuId: "system-controls"
@@ -37,6 +38,8 @@ SideMenu {
     direction: "right"
 
     onMenuOpenChanged: {
+        root.syncSyncthingMonitoring();
+
         if (menuOpen)
             return;
 
@@ -45,6 +48,19 @@ SideMenu {
         root.confirmationDisplayAction = "";
         root.panelResetRequested();
         panelFlickable.contentY = 0;
+    }
+
+    function syncSyncthingMonitoring() {
+        if (root.menuOpen === root.syncthingMonitoringAcquired)
+            return;
+
+        root.syncthingMonitoringAcquired = root.menuOpen;
+
+        if (root.syncthingMonitoringAcquired) {
+            SyncthingState.acquireMonitoring();
+        } else {
+            SyncthingState.releaseMonitoring();
+        }
     }
 
     function actionConfirmLabel(action) {
@@ -468,6 +484,18 @@ SideMenu {
                         }
                     }
                 }
+
+                Loader {
+                    id: syncthingPanelLoader
+
+                    active: root.mounted && SyncthingState.serviceRunning
+                    width: parent.width
+                    sourceComponent: Component {
+                        SystemControlsSyncthingPanel {
+                            width: syncthingPanelLoader.width
+                        }
+                    }
+                }
             }
         }
 
@@ -754,6 +782,15 @@ SideMenu {
                     }
                 }
             }
+        }
+    }
+
+    Component.onCompleted: root.syncSyncthingMonitoring()
+
+    Component.onDestruction: {
+        if (root.syncthingMonitoringAcquired) {
+            root.syncthingMonitoringAcquired = false;
+            SyncthingState.releaseMonitoring();
         }
     }
 }
