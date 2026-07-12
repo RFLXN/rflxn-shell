@@ -9,12 +9,10 @@ Rectangle {
 
     property bool pollingActive: false
     property bool pollingAcquired: false
-    property bool previewMode: false
-    property int previewPercent: 58
-    readonly property int brightnessPercent: previewMode ? previewPercent : BrightnessState.percent
-    readonly property bool controlAvailable: previewMode || BrightnessState.available
-    readonly property bool controlSucceeded: previewMode || BrightnessState.lastSetSucceeded
-    readonly property bool pollingRequested: pollingActive && !previewMode
+    readonly property int brightnessPercent: BrightnessState.percent
+    readonly property bool controlAvailable: BrightnessState.available
+    readonly property bool controlSucceeded: BrightnessState.lastSetSucceeded
+    readonly property bool pollingRequested: pollingActive
 
     width: parent?.width ?? 380
     height: content.implicitHeight + 24
@@ -34,18 +32,14 @@ Rectangle {
         const ratio = root.clamp(x / Math.max(1, item.width), 0, 1);
         const nextPercent = Math.max(1, Math.round(ratio * 100));
 
-        if (root.previewMode) {
-            root.previewPercent = nextPercent;
-        } else {
-            BrightnessState.setPercent(nextPercent);
-        }
+        BrightnessState.setPercent(nextPercent);
     }
 
     function statusDescription() {
         if (!root.controlSucceeded)
             return "Unable to change display brightness";
 
-        const displayName = root.previewMode ? "eDP-1" : (BrightnessState.internalDisplayName || "Internal display");
+        const displayName = BrightnessState.internalDisplayName || "Internal display";
 
         return `${displayName} · ${root.brightnessPercent}%`;
     }
@@ -64,7 +58,6 @@ Rectangle {
     }
 
     onPollingActiveChanged: root.syncPolling()
-    onPreviewModeChanged: root.syncPolling()
 
     Column {
         id: content
