@@ -113,13 +113,13 @@ Item {
     }
 
     function toWifiStrengthLevel(strength) {
-        if (strength >= 75)
+        if (strength >= 0.75)
             return 4;
 
-        if (strength >= 50)
+        if (strength >= 0.50)
             return 3;
 
-        if (strength >= 25)
+        if (strength >= 0.25)
             return 2;
 
         return 1;
